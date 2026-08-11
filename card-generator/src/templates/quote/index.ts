@@ -1,4 +1,6 @@
-import { CardTemplate, FONT_STACK } from "./engine";
+import { CardTemplate } from "@/lib/template-engine";
+import html from "./card.html?raw";
+import css from "./card.css?raw";
 
 export const quoteCard: CardTemplate = {
   id: "quote",
@@ -48,23 +50,6 @@ export const quoteCard: CardTemplate = {
       },
     },
   ],
-  html: `<div class="{{cls}}">
-  <svg class="{{cls}}__mark" width="52" height="32" viewBox="0 0 64 40" fill="none" aria-hidden="true"><path d="M0 40L20 0H28L8 40H0Z" fill="currentColor"/><path d="M28 40L48 0H56L36 40H28Z" fill="currentColor"/></svg>
-  <p class="{{cls}}__text">{{text}}</p>
-  <div class="{{cls}}__author">
-    {{#if photo}}<img class="{{cls}}__avatar" src="{{photo}}" alt="{{name}}">{{/if}}
-    <div>
-      <strong class="{{cls}}__name">{{name}}</strong>
-      <span class="{{cls}}__role">{{role}}</span>
-    </div>
-  </div>
-</div>`,
-  css: `.{{cls}}{box-sizing:border-box;border-radius:20px;padding:40px;background:{{theme.bg}};color:{{theme.fg}};font-family:${FONT_STACK};}
-.{{cls}} *{box-sizing:border-box;}
-.{{cls}}__mark{display:block;margin:0 0 20px;color:{{theme.icon}};}
-.{{cls}}__text{font-size:26px;line-height:1.35;font-weight:500;margin:0 0 28px;color:{{theme.fg}};}
-.{{cls}}__author{display:flex;align-items:center;gap:14px;}
-.{{cls}}__avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;background:#ccc;flex-shrink:0;}
-.{{cls}}__name{display:block;font-size:15px;font-weight:600;color:{{theme.fg}};}
-.{{cls}}__role{display:block;font-size:13px;color:{{theme.sub}};}`,
+  html,
+  css,
 };

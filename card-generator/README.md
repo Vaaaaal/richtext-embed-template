@@ -52,12 +52,21 @@ Developer Portal Webflow.
 
 ## Structure
 
+`src/templates/` ne contient **que** des templates — un sous-dossier par
+template, toute la mécanique est ailleurs :
+
 ```
-src/templates/engine.ts   ← types + moteur de rendu (générique, ne change jamais)
-src/templates/quote.ts    ← template "Citation"                (à éditer / dupliquer)
-src/templates/cta.ts      ← template "CTA"                      (à éditer / dupliquer)
-src/templates/registry.ts ← catalogue TEMPLATES + filtrage par site
-src/templates/index.ts    ← barrel (réexporte engine + registry)
+src/templates/quote/       ← template "Citation"   (à éditer / dupliquer)
+  ├── card.html            ←   markup, fichier HTML normal
+  ├── card.css             ←   styles, fichier CSS normal
+  └── index.ts             ←   champs du formulaire + assemblage
+src/templates/cta/         ← template "CTA"        (même structure)
+
+src/lib/template-engine.ts   ← types + moteur de rendu (générique, ne change jamais)
+src/lib/template-registry.ts ← catalogue TEMPLATES + filtrage par site
+src/lib/clipboard.ts         ← copie presse-papier avec fallbacks
+src/lib/utils.ts             ← helper `cn` (shadcn)
+
 src/App.tsx               ← panneau : formulaire, aperçu, copie  (générique)
 src/components/ui/*       ← composants shadcn (générés par la CLI, ne pas éditer à la main)
 src/index.css             ← Tailwind + tokens de couleur shadcn
@@ -68,17 +77,40 @@ webflow.json               ← manifest de l'extension (name, publicDir, size)
 
 ## Ajouter ou modifier un template
 
-Chaque template a son propre fichier dans [`src/templates/`](src/templates/)
-(`quote.ts`, `cta.ts`, …) — le plus simple pour en créer un nouveau est de
-dupliquer le plus proche de ce que tu veux obtenir. Un template est un objet
-`CardTemplate` **entièrement déclaratif** — `fields`, `html`, `css` sont des
-chaînes et des tableaux, aucune fonction. C'est ce qui le rend valide en
-JSON, donc compatible avec une source de données externe plus tard (voir
-plus bas) sans rien changer au moteur de rendu.
+Chaque template est un dossier dans [`src/templates/`](src/templates/) avec
+trois fichiers. Le plus rapide pour en créer un : **dupliquer le dossier le
+plus proche** de ce que tu veux obtenir (`quote/` ou `cta/`), le renommer,
+puis l'enregistrer dans le catalogue.
+
+```
+src/templates/mon-template/
+├── card.html    ← markup (fichier HTML normal : coloration, Emmet, Prettier)
+├── card.css     ← styles (fichier CSS normal)
+└── index.ts     ← champs du formulaire + assemblage
+```
+
+```html
+<!-- card.html -->
+<div class="{{cls}}">
+  <h2 class="{{cls}}__titre">{{titre}}</h2>
+</div>
+```
+
+```css
+/* card.css */
+.{{cls}} {
+  padding: 24px;
+}
+.{{cls}}__titre {
+  font-size: 24px;
+}
+```
 
 ```ts
-// src/templates/mon-template.ts
-import { CardTemplate } from "./engine";
+// index.ts
+import { CardTemplate } from "@/lib/template-engine";
+import html from "./card.html?raw";
+import css from "./card.css?raw";
 
 export const monTemplate: CardTemplate = {
   id: "mon-template",
@@ -87,19 +119,34 @@ export const monTemplate: CardTemplate = {
     { id: "titre", label: "Titre", type: "text", default: "Bonjour" },
     // types disponibles : "text" | "textarea" | "url" | "segmented"
   ],
-  html: `<div class="{{cls}}">{{titre}}</div>`,
-  css: `.{{cls}}{padding:24px;}`,
+  html,
+  css,
 };
 ```
 
-Puis, dans [`src/templates/registry.ts`](src/templates/registry.ts) :
-importer le nouveau fichier et l'ajouter au tableau `TEMPLATES` (et à
-`DEFAULT_TEMPLATE_IDS` s'il doit être visible par défaut). Le formulaire,
-l'aperçu et le code généré se construisent automatiquement à partir de cette
-config — aucune autre modification nécessaire.
+Le `?raw` est une fonctionnalité native de Vite : le fichier est lu comme
+une simple chaîne de caractères et inliné dans le bundle au build. Le
+template reste donc un pur objet de données, sans code exécutable — c'est
+ce qui le garde compatible avec une source externe plus tard (voir plus bas).
 
-**Syntaxe des gabarits `html` / `css`** (interprétée par `renderTemplate()`
-dans [`src/templates/engine.ts`](src/templates/engine.ts)) :
+Puis, dans
+[`src/lib/template-registry.ts`](src/lib/template-registry.ts) : importer le
+nouveau template et l'ajouter au tableau `TEMPLATES` (et à
+`DEFAULT_TEMPLATE_IDS` s'il doit être visible par défaut). Le formulaire,
+l'aperçu et le code généré se construisent automatiquement — aucune autre
+modification nécessaire.
+
+> **À savoir sur les fichiers `.css`** : à cause des `{{cls}}` dans les
+> sélecteurs, ce n'est pas du CSS syntaxiquement valide, et l'éditeur y
+> affichera des erreurs (soulignements rouges). C'est cosmétique — le
+> fichier n'est jamais parsé comme du CSS, seulement lu comme du texte. Pour
+> les faire taire dans VS Code : `"css.validate": false` dans les réglages
+> du workspace. Les fichiers `.html`, eux, ne posent aucun problème
+> (`class="{{cls}}"` est un attribut parfaitement valide).
+
+**Syntaxe des gabarits `card.html` / `card.css`** (interprétée par
+`renderTemplate()` dans
+[`src/lib/template-engine.ts`](src/lib/template-engine.ts)) :
 
 - `{{cls}}` — classe racine unique de la card (suffixe aléatoire). Toujours
   préfixer les classes par `{{cls}}` (ex. `{{cls}}__titre`) : c'est ce qui
@@ -169,14 +216,16 @@ Ce que ce portage change concrètement par rapport à `main` :
 - **UI** : `src/index.ts` (DOM manipulé à la main) devient `src/App.tsx`
   (composants React + hooks d'état) + les primitives shadcn dans
   `src/components/ui/` (Select, Input, Textarea, Label, ToggleGroup, Button).
-- **La config des templates n'a pas changé de contenu**, seulement
-  d'organisation : `src/templates.ts` (un seul fichier, sur `main`) est
-  devenu `src/templates/` (un fichier par template, sur cette branche —
-  reorg indépendante de shadcn, faite pour rester lisible en ajoutant des
-  templates). Aucune ligne de `fields`/`html`/`css` n'a changé, ni le moteur
-  de rendu : seule la répartition entre fichiers diffère. C'est quand même
-  la validation concrète de la séparation données/rendu déjà en place — le
-  moteur de templates ne dépend pas de la techno du panneau.
+- **Les templates n'ont pas changé de contenu**, seulement d'organisation :
+  `src/templates.ts` (un fichier unique contenant moteur + templates +
+  catalogue, sur `main`) est devenu `src/lib/template-engine.ts` +
+  `src/lib/template-registry.ts` + un dossier par template avec ses
+  `card.html` / `card.css` dédiés. Les réorganisations sont indépendantes de
+  shadcn (elles visent la lisibilité à mesure qu'on ajoute des templates) et
+  pourraient être reportées sur `main` telles quelles. Le moteur de rendu et
+  les gabarits sont fonctionnellement inchangés — vérifié par un script de
+  rendu hors navigateur (échappement XSS, `javascript:` neutralisé,
+  conditionnels, tokens de thème, scoping des classes).
 
 **Coût mesuré** : bundle de ~10 Ko (vanilla, `main`) à ~114 Ko (React +
 Radix + Tailwind, cette branche) une fois compressé dans `bundle.zip` — reste

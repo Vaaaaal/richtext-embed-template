@@ -1,21 +1,22 @@
 /**
  * Catalogue des templates + filtrage par site.
  *
- * Pour ajouter un template : lui créer un fichier (voir quote.ts / cta.ts
- * comme exemples), l'importer ci-dessous, l'ajouter à `TEMPLATES` (et à
- * `DEFAULT_TEMPLATE_IDS` s'il doit être visible par défaut).
+ * Pour ajouter un template : créer son dossier dans `src/templates/<nom>/`
+ * (dupliquer `quote/` est le plus rapide), l'importer ci-dessous et
+ * l'ajouter à `TEMPLATES` — ainsi qu'à `DEFAULT_TEMPLATE_IDS` s'il doit
+ * être visible par défaut.
  */
 
-import { CardTemplate } from "./engine";
-import { quoteCard } from "./quote";
-import { ctaCard } from "./cta";
+import { CardTemplate } from "./template-engine";
+import { quoteCard } from "@/templates/quote";
+import { ctaCard } from "@/templates/cta";
 
 /**
  * Catalogue complet des templates disponibles dans le bundle.
  *
- * Chaque template est un pur objet de données (chaînes, tableaux, nombres —
- * aucune fonction) : valide en JSON. Le jour où les templates doivent venir
- * d'une source externe, il suffit de remplacer cet import statique par un
+ * Chaque template est un pur objet de données (chaînes, tableaux — aucune
+ * fonction) : valide en JSON. Le jour où les templates doivent venir d'une
+ * source externe, il suffit de remplacer ces imports statiques par un
  * fetch() qui renvoie un tableau de la même forme ; rien d'autre dans
  * l'extension n'a besoin de changer.
  */
@@ -39,7 +40,6 @@ export const templatesBySite: Record<string, string[]> = {
 
 /** Résout la liste de templates à afficher pour un site donné. */
 export function templatesForSite(siteId?: string | null): CardTemplate[] {
-  const allowed =
-    (siteId && templatesBySite[siteId]) || DEFAULT_TEMPLATE_IDS;
+  const allowed = (siteId && templatesBySite[siteId]) || DEFAULT_TEMPLATE_IDS;
   return TEMPLATES.filter((t) => allowed.indexOf(t.id) !== -1);
 }

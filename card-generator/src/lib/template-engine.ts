@@ -1,15 +1,14 @@
 /**
  * Types et moteur de rendu des templates de cards.
  *
- * Un CardTemplate est une simple valeur (fields + html + css) : aucune
- * fonction, aucun code exécutable. C'est ce qui permet au catalogue de
- * templates (voir registry.ts) d'être demain servi par une source externe
- * (fichier JSON, API) au lieu d'un import statique — même forme, il suffira
- * de remplacer l'un par l'autre.
+ * Générique : ce fichier ne connaît aucun template en particulier et ne
+ * change jamais quand on en ajoute un. Les templates eux-mêmes vivent dans
+ * `src/templates/<nom>/`, le catalogue dans `template-registry.ts`.
  *
- * Ce fichier ne change jamais quand on ajoute un template : chaque template
- * vit dans son propre fichier (quote.ts, cta.ts, …), voir registry.ts pour
- * le catalogue.
+ * Un CardTemplate est une simple valeur (fields + html + css) : aucune
+ * fonction, aucun code exécutable. C'est ce qui permet au catalogue d'être
+ * demain servi par une source externe (fichier JSON, API) au lieu d'imports
+ * statiques — même forme, il suffira de remplacer l'un par l'autre.
  */
 
 export type FieldType = "text" | "textarea" | "url" | "segmented";
@@ -52,15 +51,12 @@ export interface CardTemplate {
   /**
    * Gabarit HTML avec placeholders {{champId}}, {{champId.token}}, {{cls}}
    * et blocs conditionnels {{#if champId}}…{{/if}}.
+   * Importé depuis un fichier .html dédié (voir src/templates/<nom>/).
    */
   html: string;
-  /** Gabarit CSS, mêmes placeholders. */
+  /** Gabarit CSS, mêmes placeholders. Importé depuis un fichier .css dédié. */
   css: string;
 }
-
-/** Pile de polices commune à tous les templates. */
-export const FONT_STACK =
-  '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif';
 
 /* ------------------------------------------------------------------ */
 /* Helpers d'échappement — le code généré finit dans un Rich Text CMS, */
@@ -89,8 +85,7 @@ export function safeUrl(url: string, fallback = "#"): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* Moteur de rendu — interprète un CardTemplate + des valeurs saisies.  */
-/* Générique : ne connaît aucun template en particulier.               */
+/* Rendu                                                               */
 /* ------------------------------------------------------------------ */
 
 function buildContext(
@@ -140,6 +135,7 @@ export function renderTemplate(
   cls: string
 ): BuiltCard {
   const ctx = buildContext(tpl, values, cls);
-  const render = (str: string) => applyPlaceholders(applyConditionals(str, ctx), ctx);
+  const render = (str: string) =>
+    applyPlaceholders(applyConditionals(str, ctx), ctx).trim();
   return { html: render(tpl.html), css: render(tpl.css) };
 }

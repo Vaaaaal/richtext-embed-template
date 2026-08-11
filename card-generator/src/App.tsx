@@ -5,8 +5,8 @@ import {
   CardTemplate,
   TemplateField,
   renderTemplate,
-  templatesForSite,
-} from "./templates";
+} from "./lib/template-engine";
+import { templatesForSite } from "./lib/template-registry";
 import { copyToClipboard } from "./lib/clipboard";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";

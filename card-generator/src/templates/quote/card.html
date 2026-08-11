@@ -1,0 +1,14 @@
+<div class="{{cls}}">
+  <svg class="{{cls}}__mark" width="52" height="32" viewBox="0 0 64 40" fill="none" aria-hidden="true">
+    <path d="M0 40L20 0H28L8 40H0Z" fill="currentColor" />
+    <path d="M28 40L48 0H56L36 40H28Z" fill="currentColor" />
+  </svg>
+  <p class="{{cls}}__text">{{text}}</p>
+  <div class="{{cls}}__author">
+    {{#if photo}}<img class="{{cls}}__avatar" src="{{photo}}" alt="{{name}}" />{{/if}}
+    <div>
+      <strong class="{{cls}}__name">{{name}}</strong>
+      <span class="{{cls}}__role">{{role}}</span>
+    </div>
+  </div>
+</div>
