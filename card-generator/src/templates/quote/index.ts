@@ -31,22 +31,18 @@ export const quoteCard: CardTemplate = {
       type: "segmented",
       default: "light",
       options: [
+        { value: "inherit", label: "Section" },
         { value: "light", label: "Clair" },
         { value: "dark", label: "Sombre" },
       ],
+      // Le thème n'est plus une liste de couleurs : on pose simplement la
+      // classe utilitaire du site, qui bascule le mode des variables Webflow
+      // (voir card.css). "inherit" n'émet aucune classe, la card prend donc
+      // le thème de la section qui l'entoure.
       tokens: {
-        light: {
-          bg: "#E7EAEC",
-          fg: "#0F1F2E",
-          sub: "rgba(15,31,46,.65)",
-          icon: "#2E2AE4",
-        },
-        dark: {
-          bg: "#0F1F2E",
-          fg: "#ffffff",
-          sub: "rgba(255,255,255,.65)",
-          icon: "#D7F86C",
-        },
+        inherit: { class: "" },
+        light: { class: "u-theme-light" },
+        dark: { class: "u-theme-dark" },
       },
     },
   ],

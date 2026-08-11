@@ -1,9 +1,18 @@
+/*
+ * Couleurs prises sur le design system du site (variables Webflow).
+ * Le repli de chaque var() est la valeur réelle du mode clair : il sert
+ * uniquement si la card est collée sur un site sans ces variables, ou dans
+ * l'aperçu du panneau quand l'API Designer n'a pas pu les fournir.
+ *
+ * Le thème (clair / sombre / brand) vient de la classe {{theme.class}} posée
+ * sur la racine — c'est elle qui bascule le mode des variables.
+ */
 .{{cls}} {
   box-sizing: border-box;
   border-radius: 20px;
   padding: 40px;
-  background: {{theme.bg}};
-  color: {{theme.fg}};
+  background: var(--_theme---background-2, #e9ecef);
+  color: var(--_theme---heading, #0f242e);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 .{{cls}} * {
@@ -12,14 +21,14 @@
 .{{cls}}__mark {
   display: block;
   margin: 0 0 20px;
-  color: {{theme.icon}};
+  color: var(--_theme---heading-accent, #262ed9);
 }
 .{{cls}}__text {
   font-size: 26px;
   line-height: 1.35;
   font-weight: 500;
   margin: 0 0 28px;
-  color: {{theme.fg}};
+  color: var(--_theme---heading, #0f242e);
 }
 .{{cls}}__author {
   display: flex;
@@ -38,10 +47,11 @@
   display: block;
   font-size: 15px;
   font-weight: 600;
-  color: {{theme.fg}};
+  color: var(--_theme---heading, #0f242e);
 }
 .{{cls}}__role {
   display: block;
   font-size: 13px;
-  color: {{theme.sub}};
+  /* 65% du texte principal, comme avant, mais en suivant le thème. */
+  color: color-mix(in srgb, var(--_theme---heading, #0f242e) 65%, transparent);
 }

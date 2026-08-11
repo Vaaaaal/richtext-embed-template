@@ -6,7 +6,11 @@ import {
   TemplateField,
   renderTemplate,
 } from "./lib/template-engine";
-import { templatesForSite } from "./lib/template-registry";
+import {
+  PREVIEW_THEME_CLASSES,
+  templatesForSite,
+} from "./lib/template-registry";
+import { buildPreviewThemeCss } from "./lib/site-theme";
 import { copyToClipboard } from "./lib/clipboard";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
@@ -46,6 +50,8 @@ export default function App() {
   const [scopes, setScopes] = useState<Record<string, string>>({});
   const [showCode, setShowCode] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>("idle");
+  /** Variables du site réinjectées dans l'aperçu (voir lib/site-theme.ts). */
+  const [themeCss, setThemeCss] = useState("");
 
   const frameRef = useRef<HTMLIFrameElement>(null);
   const copyTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -80,6 +86,12 @@ export default function App() {
         setScopes({ [first.id]: newScopeId() });
       }
       setReady(true);
+
+      // Lecture des variables du site : plusieurs centaines d'appels au pont
+      // Designer, donc volontairement après l'affichage du panneau. Tant
+      // qu'elle n'a pas abouti, l'aperçu utilise les replis des var().
+      const css = await buildPreviewThemeCss(PREVIEW_THEME_CLASSES);
+      if (!cancelled) setThemeCss(css);
     })();
 
     return () => {
@@ -238,7 +250,7 @@ export default function App() {
           title="Aperçu de la card"
           className="block w-full rounded-xl border border-white/6 bg-white shadow-[0_1px_2px_rgba(0,0,0,.3),0_16px_32px_rgba(0,0,0,.3)]"
           style={{ height: 240 }}
-          srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;}body{padding:16px;background:#fff;}</style></head><body>${code}</body></html>`}
+          srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>${themeCss}</style><style>html,body{margin:0;}body{padding:16px;background:var(--_theme---background,#fff);}</style></head><body>${code}</body></html>`}
         />
 
         {showCode && (

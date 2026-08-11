@@ -116,6 +116,31 @@ function buildContext(
   return ctx;
 }
 
+/**
+ * Retire les commentaires des gabarits.
+ *
+ * Les fichiers card.html / card.css sont documentés pour le développeur, mais
+ * leur contenu est copié tel quel dans un champ CMS : les commentaires n'ont
+ * rien à y faire. Les retirer avant substitution évite au passage qu'un
+ * placeholder cité dans un commentaire ne soit interprété.
+ *
+ * Limite connue : une séquence de commentaire à l'intérieur d'une chaîne CSS
+ * (ex. `content: "/*"`) serait mal découpée — cas absent des templates.
+ */
+function stripComments(str: string): string {
+  return str
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
+}
+
+/** Nettoie les espaces parasites dans les attributs class (ex. thème vide). */
+function tidyClassAttributes(html: string): string {
+  return html.replace(
+    /class="([^"]*)"/g,
+    (_match, value: string) => `class="${value.trim().replace(/\s+/g, " ")}"`
+  );
+}
+
 /** {{#if champId}}…{{/if}} : rendu seulement si le champ résout à une valeur non vide. */
 function applyConditionals(str: string, ctx: Record<string, string>): string {
   return str.replace(
@@ -136,6 +161,9 @@ export function renderTemplate(
 ): BuiltCard {
   const ctx = buildContext(tpl, values, cls);
   const render = (str: string) =>
-    applyPlaceholders(applyConditionals(str, ctx), ctx).trim();
-  return { html: render(tpl.html), css: render(tpl.css) };
+    applyPlaceholders(applyConditionals(stripComments(str), ctx), ctx).trim();
+  return {
+    html: tidyClassAttributes(render(tpl.html)),
+    css: render(tpl.css),
+  };
 }

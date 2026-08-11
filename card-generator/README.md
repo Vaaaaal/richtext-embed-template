@@ -166,6 +166,74 @@ modification nécessaire.
 Un nouveau suffixe de classe est tiré après chaque copie réussie, pour que la
 card suivante ait ses propres classes.
 
+Les **commentaires** (`/* … */` et `<!-- … -->`) sont retirés au rendu :
+documente librement tes gabarits, rien de tout ça n'atterrit dans le code
+copié par le client.
+
+## Variables du site (design system)
+
+Les gabarits peuvent référencer directement les variables Webflow du site
+plutôt que des couleurs figées — c'est ce que fait le template Citation :
+
+```css
+background: var(--_theme---background-2, #e9ecef);
+color: var(--_theme---heading, #0f242e);
+```
+
+L'intérêt : une card déjà collée dans le CMS **suit automatiquement** les
+changements de charte du client. Avec des hex en dur, chaque card fige les
+couleurs au moment de sa création, et une refonte laisse derrière elle des
+dizaines de champs Rich Text à corriger à la main.
+
+**Toujours mettre une valeur de repli** dans le `var()`. Elle sert si la card
+est collée sur un site sans ces variables, et dans l'aperçu quand l'API
+Designer n'a pas pu les fournir.
+
+> Relever les noms exacts : ne pas les reconstituer depuis le nom affiché
+> dans le Designer. Une faute de frappe **échoue silencieusement** — le repli
+> masque l'erreur, et la card ne suivra jamais le thème sans que personne ne
+> s'en aperçoive. Les noms CSS réels s'obtiennent via l'API (`getCSSName()`
+> côté Designer, champ `cssName` côté Data API/MCP).
+
+### Thèmes : classes plutôt que couleurs
+
+Le site pilote ses thèmes avec les **modes de variables** Webflow : une classe
+comme `.u-theme-dark` bascule le mode de la collection, ce qui fait résoudre
+`--_theme---heading` vers une autre valeur.
+
+Un champ `segmented` n'a donc pas à porter de couleurs — juste la classe :
+
+```ts
+tokens: {
+  inherit: { class: "" },              // la card prend le thème de sa section
+  light:   { class: "u-theme-light" },
+  dark:    { class: "u-theme-dark" },
+}
+```
+
+```html
+<div class="{{cls}} {{theme.class}}">
+```
+
+Le CSS reste identique quel que soit le thème choisi — c'est la classe qui
+change tout. À noter : une card en « Sombre » posée sur une section déjà
+sombre se confondra avec le fond ; c'est l'option « Section » qui est faite
+pour ce cas.
+
+### Aperçu du panneau
+
+L'aperçu est une iframe isolée, sans accès aux variables du site. Au
+chargement, [`src/lib/site-theme.ts`](src/lib/site-theme.ts) les lit via
+l'API Designer (collections → modes → variables) et reconstruit un bloc
+`:root { … }` plus un bloc par classe de thème, injectés dans l'iframe.
+
+Les classes reproduites sont listées dans `PREVIEW_THEME_CLASSES`
+([`src/lib/template-registry.ts`](src/lib/template-registry.ts)) — à ajuster
+pour un client dont le design system utilise d'autres noms.
+
+Toute la chaîne est best-effort : en cas d'échec, l'aperçu retombe sur les
+valeurs de repli des `var()` et le code copié reste correct dans tous les cas.
+
 ## Filtrage par site (multi-client)
 
 Un seul bundle sert tous les clients. `templatesBySite` associe un `siteId` à

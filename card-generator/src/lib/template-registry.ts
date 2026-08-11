@@ -26,6 +26,23 @@ export const TEMPLATES: CardTemplate[] = [quoteCard, ctaCard];
 export const DEFAULT_TEMPLATE_IDS: string[] = ["quote", "cta"];
 
 /**
+ * Classes utilitaires de thème du site, reproduites dans l'aperçu du panneau.
+ *
+ * Ce sont les classes que les templates peuvent poser sur la racine d'une
+ * card (via un token `class`) et qui basculent le mode des variables Webflow.
+ * Sans cette liste, l'aperçu ne saurait pas afficher la différence entre
+ * clair et sombre — le code copié, lui, fonctionne de toute façon sur le site.
+ *
+ * Propre au site : à ajuster pour un client dont le design system utilise
+ * d'autres noms de classes.
+ */
+export const PREVIEW_THEME_CLASSES: string[] = [
+  "u-theme-light",
+  "u-theme-dark",
+  "u-theme-brand",
+];
+
+/**
  * Templates autorisés par site, indexés par siteId (webflow.getSiteInfo()).
  * Le siteId courant est affiché en bas du panneau : ouvrir l'extension sur le
  * site, copier l'ID, ajouter l'entrée ici, republier.
