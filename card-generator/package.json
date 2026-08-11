@@ -1,0 +1,21 @@
+{
+  "name": "card-generator",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "build": "npm install && tsc -p tsconfig.json && webflow extension bundle",
+    "dev": "npm install && concurrently -r \"webflow extension serve\" \"tsc -p tsconfig.json --watch --preserveWatchOutput\"",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@webflow/designer-extension-typings": "^2.0.2",
+    "@webflow/webflow-cli": "^2.3.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.21.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.24.0"
+  }
+}

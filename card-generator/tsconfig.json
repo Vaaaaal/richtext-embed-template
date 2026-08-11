@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "public",
+    "target": "es2017",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "lib": ["es2017", "dom"],
+    "typeRoots": ["./node_modules/@types", "./node_modules/@webflow"],
+    // Sans cette liste explicite, tsc tenterait de charger chaque dossier de
+    // node_modules/@webflow comme paquet de types (dont la CLI, qui n'en a pas).
+    "types": ["designer-extension-typings"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

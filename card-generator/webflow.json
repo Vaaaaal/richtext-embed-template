@@ -1,0 +1,13 @@
+{
+  "name": "Générateur de cards",
+  "publicDir": "public",
+  "size": "large",
+  "apiVersion": "2",
+  "telemetry": {
+    "global": {
+      "allowTelemetry": true,
+      "lastPrompted": 1786430546915,
+      "version": "2.3.0"
+    }
+  }
+}

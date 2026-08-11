@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Générateur de cards</title>
+<style>
+  :root{
+    --ink:#0F1F2E;
+    --paper:#F5F6F7;
+    --line:#DADFE3;
+    --accent:#3B33E8;
+    --muted:#68727C;
+    --ok:#1E7B4D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    display:flex;
+    min-height:100vh;
+  }
+  aside{
+    width:340px;
+    flex-shrink:0;
+    background:#fff;
+    border-right:1px solid var(--line);
+    padding:24px;
+    overflow-y:auto;
+  }
+  main{
+    flex:1;
+    padding:48px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:24px;
+  }
+  h1{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 16px;}
+  .tpl-picker{display:flex;gap:8px;margin-bottom:24px;}
+  .tpl-picker button{
+    flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;font-size:13px;cursor:pointer;color:var(--ink);
+  }
+  .tpl-picker button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  label{display:block;font-size:12.5px;font-weight:600;margin:16px 0 6px;color:var(--ink);}
+  label:first-of-type{margin-top:0;}
+  input[type=text],input[type=url],textarea,select{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+    font-size:13.5px;font-family:inherit;color:var(--ink);background:#fff;
+  }
+  textarea{resize:vertical;min-height:64px;}
+  .seg{display:flex;gap:6px;}
+  .seg button{
+    flex:1;padding:8px;border-radius:7px;border:1px solid var(--line);background:#fff;
+    font-size:13px;cursor:pointer;
+  }
+  .seg button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .copy-btn{
+    margin-top:24px;width:100%;padding:12px;border:none;border-radius:8px;
+    background:var(--ink);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .copy-btn.copied{background:var(--ok);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
+  .preview-frame{
+    width:100%;max-width:600px;
+  }
+  .code-toggle{
+    font-size:12.5px;color:var(--accent);background:none;border:none;cursor:pointer;
+    padding:0;text-decoration:underline;
+  }
+  pre{
+    width:100%;max-width:600px;background:var(--ink);color:#c9d4dc;padding:16px;
+    border-radius:8px;font-size:11.5px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;
+    display:none;
+  }
+  pre.show{display:block;}
+
+  /* --- gabarits des cards générées (aperçu) --- */
+  .card-quote{border-radius:20px;padding:40px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+  .card-quote.light{background:#E7EAEC;color:#0F1F2E;}
+  .card-quote.dark{background:#0F1F2E;color:#fff;}
+  .card-quote svg{display:block;margin-bottom:20px;}
+  .card-quote.light svg{color:#2E2AE4;}
+  .card-quote.dark svg{color:#D7F86C;}
+  .card-quote p{font-size:26px;line-height:1.35;font-weight:500;margin:0 0 28px;}
+  .card-quote .author{display:flex;align-items:center;gap:14px;}
+  .card-quote .author img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:#ccc;}
+  .card-quote .author strong{display:block;font-size:15px;}
+  .card-quote .author span{display:block;font-size:13px;opacity:.65;}
+
+  .card-cta{background:#E7EAEC;color:#0F1F2E;border-radius:20px;padding:44px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+  .card-cta h2{font-size:30px;line-height:1.25;margin:0 0 16px;font-weight:600;}
+  .card-cta p{font-size:15px;line-height:1.6;color:#4B5560;margin:0 0 26px;}
+  .card-cta a{
+    display:inline-flex;align-items:center;gap:12px;background:#0F1F2E;color:#fff;
+    padding:6px 22px 6px 6px;border-radius:999px;text-decoration:none;font-size:14.5px;font-weight:500;
+  }
+  .card-cta a .arrow{
+    width:30px;height:30px;border-radius:50%;background:#D7F86C;display:flex;align-items:center;
+    justify-content:center;flex-shrink:0;
+  }
+</style>
+</head>
+<body>
+
+<aside>
+  <h1>Générateur de cards</h1>
+  <div class="tpl-picker">
+    <button id="pick-quote" class="active">Citation</button>
+    <button id="pick-cta">CTA</button>
+  </div>
+
+  <div id="form-quote">
+    <label>Citation</label>
+    <textarea id="q-text">En 6 mois, nous avons consolidé les cartographies de risques de 12 entités sur un même référentiel.</textarea>
+    <label>Nom de l'auteur</label>
+    <input type="text" id="q-name" value="Jonathan">
+    <label>Rôle</label>
+    <input type="text" id="q-role" value="Auteur de l'article">
+    <label>Photo (URL)</label>
+    <input type="url" id="q-photo" placeholder="https://...">
+    <label>Thème</label>
+    <div class="seg">
+      <button id="q-theme-light" class="active">Clair</button>
+      <button id="q-theme-dark">Sombre</button>
+    </div>
+  </div>
+
+  <div id="form-cta" style="display:none;">
+    <label>Titre</label>
+    <textarea id="c-title">Construisons ensemble la plateforme GRC de référence</textarea>
+    <label>Texte</label>
+    <textarea id="c-text">Découvrez comment Iskera aide les équipes conformité à piloter leurs risques sur un seul référentiel.</textarea>
+    <label>Texte du bouton</label>
+    <input type="text" id="c-btn-text" value="Demander une démo">
+    <label>Lien du bouton</label>
+    <input type="url" id="c-btn-link" value="#" placeholder="https://...">
+  </div>
+
+  <button class="copy-btn" id="copy-btn">Copier le code</button>
+  <button class="code-toggle" id="toggle-code" style="margin-top:12px;">Afficher le code</button>
+  <p class="hint">Le code copié est autonome (styles isolés dans une balise &lt;style&gt; préfixée) : colle-le directement dans un élément Embed, dans un champ Rich Text du CMS ou ailleurs.</p>
+</aside>
+
+<main>
+  <div class="preview-frame" id="preview"></div>
+  <pre id="code-output"></pre>
+</main>
+
+<script>
+const state = { template: "quote", theme: "light" };
+
+const els = {
+  qText: document.getElementById('q-text'),
+  qName: document.getElementById('q-name'),
+  qRole: document.getElementById('q-role'),
+  qPhoto: document.getElementById('q-photo'),
+  cTitle: document.getElementById('c-title'),
+  cText: document.getElementById('c-text'),
+  cBtnText: document.getElementById('c-btn-text'),
+  cBtnLink: document.getElementById('c-btn-link'),
+};
+
+const quoteIcon = (color) => `<svg width="52" height="32" viewBox="0 0 64 40" fill="none" style="color:${color}"><path d="M0 40L20 0H28L8 40H0Z" fill="currentColor"/><path d="M28 40L48 0H56L36 40H28Z" fill="currentColor"/></svg>`;
+
+function escapeHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildQuote(scoped){
+  const theme = state.theme;
+  const iconColor = theme === 'dark' ? '#D7F86C' : '#2E2AE4';
+  const bg = theme === 'dark' ? '#0F1F2E' : '#E7EAEC';
+  const fg = theme === 'dark' ? '#ffffff' : '#0F1F2E';
+  const sub = theme === 'dark' ? 'rgba(255,255,255,.65)' : 'rgba(15,31,46,.65)';
+  const photo = els.qPhoto.value || 'https://placehold.co/96x96';
+  const cls = scoped ? `wf-q-${scoped}` : 'card-quote';
+  return {
+    html: `<div class="${cls} ${theme}">
+  ${quoteIcon(iconColor)}
+  <p>${escapeHtml(els.qText.value)}</p>
+  <div class="author">
+    <img src="${photo}" alt="${escapeHtml(els.qName.value)}">
+    <div>
+      <strong>${escapeHtml(els.qName.value)}</strong>
+      <span>${escapeHtml(els.qRole.value)}</span>
+    </div>
+  </div>
+</div>`,
+    style: scoped ? `.${cls}{border-radius:20px;padding:40px;background:${bg};color:${fg};font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+.${cls} svg{display:block;margin-bottom:20px;}
+.${cls} p{font-size:26px;line-height:1.35;font-weight:500;margin:0 0 28px;}
+.${cls} .author{display:flex;align-items:center;gap:14px;}
+.${cls} .author img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:#ccc;}
+.${cls} .author strong{display:block;font-size:15px;}
+.${cls} .author span{display:block;font-size:13px;color:${sub};}` : ''
+  };
+}
+
+function buildCta(scoped){
+  const cls = scoped ? `wf-cta-${scoped}` : 'card-cta';
+  return {
+    html: `<div class="${cls}">
+  <h2>${escapeHtml(els.cTitle.value)}</h2>
+  <p>${escapeHtml(els.cText.value)}</p>
+  <a href="${els.cBtnLink.value || '#'}">
+    <span class="arrow">&#8594;</span>
+    ${escapeHtml(els.cBtnText.value)}
+  </a>
+</div>`,
+    style: scoped ? `.${cls}{background:#E7EAEC;color:#0F1F2E;border-radius:20px;padding:44px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+.${cls} h2{font-size:30px;line-height:1.25;margin:0 0 16px;font-weight:600;}
+.${cls} p{font-size:15px;line-height:1.6;color:#4B5560;margin:0 0 26px;}
+.${cls} a{display:inline-flex;align-items:center;gap:12px;background:#0F1F2E;color:#fff;padding:6px 22px 6px 6px;border-radius:999px;text-decoration:none;font-size:14.5px;font-weight:500;}
+.${cls} .arrow{width:30px;height:30px;border-radius:50%;background:#D7F86C;display:flex;align-items:center;justify-content:center;flex-shrink:0;}` : ''
+  };
+}
+
+function render(){
+  const preview = document.getElementById('preview');
+  const builder = state.template === 'quote' ? buildQuote(null) : buildCta(null);
+  preview.innerHTML = builder.html;
+
+  const codeEl = document.getElementById('code-output');
+  const scopedId = Math.random().toString(36).slice(2,8);
+  const scoped = state.template === 'quote' ? buildQuote(scopedId) : buildCta(scopedId);
+  codeEl.textContent = `<style>\n${scoped.style}\n</style>\n${scoped.html}`;
+}
+
+document.getElementById('pick-quote').onclick = () => {
+  state.template = 'quote';
+  document.getElementById('pick-quote').classList.add('active');
+  document.getElementById('pick-cta').classList.remove('active');
+  document.getElementById('form-quote').style.display = 'block';
+  document.getElementById('form-cta').style.display = 'none';
+  render();
+};
+document.getElementById('pick-cta').onclick = () => {
+  state.template = 'cta';
+  document.getElementById('pick-cta').classList.add('active');
+  document.getElementById('pick-quote').classList.remove('active');
+  document.getElementById('form-cta').style.display = 'block';
+  document.getElementById('form-quote').style.display = 'none';
+  render();
+};
+document.getElementById('q-theme-light').onclick = () => {
+  state.theme = 'light';
+  document.getElementById('q-theme-light').classList.add('active');
+  document.getElementById('q-theme-dark').classList.remove('active');
+  render();
+};
+document.getElementById('q-theme-dark').onclick = () => {
+  state.theme = 'dark';
+  document.getElementById('q-theme-dark').classList.add('active');
+  document.getElementById('q-theme-light').classList.remove('active');
+  render();
+};
+
+document.getElementById('toggle-code').onclick = (e) => {
+  const pre = document.getElementById('code-output');
+  pre.classList.toggle('show');
+  e.target.textContent = pre.classList.contains('show') ? 'Masquer le code' : 'Afficher le code';
+};
+
+document.getElementById('copy-btn').onclick = async () => {
+  const code = document.getElementById('code-output').textContent;
+  try{
+    await navigator.clipboard.writeText(code);
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copié !';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier le code'; btn.classList.remove('copied'); }, 1600);
+  }catch(err){
+    alert("Impossible de copier automatiquement — sélectionne le code manuellement.");
+  }
+};
+
+[els.qText, els.qName, els.qRole, els.qPhoto, els.cTitle, els.cText, els.cBtnText, els.cBtnLink].forEach(el => {
+  el.addEventListener('input', render);
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+
+# Sortie de tsc (regénérée par npm run dev / npm run build)
+public/index.js
+public/templates.js
+
+# Bundle d'upload
+bundle.zip
