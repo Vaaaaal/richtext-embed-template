@@ -53,25 +53,34 @@ Developer Portal Webflow.
 ## Structure
 
 ```
-src/templates.ts        ← config des templates + filtrage par site   (à éditer)
-src/App.tsx              ← panneau : formulaire, aperçu, copie        (générique)
-src/components/ui/*      ← composants shadcn (générés par la CLI, ne pas éditer à la main)
-src/index.css            ← Tailwind + tokens de couleur shadcn
-index.html, src/main.tsx ← point d'entrée Vite
-public/                  ← sortie du build Vite (générée, jamais éditée)
-webflow.json              ← manifest de l'extension (name, publicDir, size)
+src/templates/engine.ts   ← types + moteur de rendu (générique, ne change jamais)
+src/templates/quote.ts    ← template "Citation"                (à éditer / dupliquer)
+src/templates/cta.ts      ← template "CTA"                      (à éditer / dupliquer)
+src/templates/registry.ts ← catalogue TEMPLATES + filtrage par site
+src/templates/index.ts    ← barrel (réexporte engine + registry)
+src/App.tsx               ← panneau : formulaire, aperçu, copie  (générique)
+src/components/ui/*       ← composants shadcn (générés par la CLI, ne pas éditer à la main)
+src/index.css             ← Tailwind + tokens de couleur shadcn
+index.html, src/main.tsx  ← point d'entrée Vite
+public/                   ← sortie du build Vite (générée, jamais éditée)
+webflow.json               ← manifest de l'extension (name, publicDir, size)
 ```
 
 ## Ajouter ou modifier un template
 
-Tout se passe dans [`src/templates.ts`](src/templates.ts). Un template est
-un objet `CardTemplate` **entièrement déclaratif** — `fields`, `html`, `css`
-sont des chaînes et des tableaux, aucune fonction. C'est ce qui le rend
-valide en JSON, donc compatible avec une source de données externe plus tard
-(voir plus bas) sans rien changer au moteur de rendu.
+Chaque template a son propre fichier dans [`src/templates/`](src/templates/)
+(`quote.ts`, `cta.ts`, …) — le plus simple pour en créer un nouveau est de
+dupliquer le plus proche de ce que tu veux obtenir. Un template est un objet
+`CardTemplate` **entièrement déclaratif** — `fields`, `html`, `css` sont des
+chaînes et des tableaux, aucune fonction. C'est ce qui le rend valide en
+JSON, donc compatible avec une source de données externe plus tard (voir
+plus bas) sans rien changer au moteur de rendu.
 
 ```ts
-const monTemplate: CardTemplate = {
+// src/templates/mon-template.ts
+import { CardTemplate } from "./engine";
+
+export const monTemplate: CardTemplate = {
   id: "mon-template",
   label: "Mon template",
   fields: [
@@ -83,13 +92,14 @@ const monTemplate: CardTemplate = {
 };
 ```
 
-Puis l'ajouter au tableau `TEMPLATES` (et à `DEFAULT_TEMPLATE_IDS` s'il doit
-être visible par défaut). Le formulaire, l'aperçu et le code généré se
-construisent automatiquement à partir de cette config — aucune modification
-ailleurs.
+Puis, dans [`src/templates/registry.ts`](src/templates/registry.ts) :
+importer le nouveau fichier et l'ajouter au tableau `TEMPLATES` (et à
+`DEFAULT_TEMPLATE_IDS` s'il doit être visible par défaut). Le formulaire,
+l'aperçu et le code généré se construisent automatiquement à partir de cette
+config — aucune autre modification nécessaire.
 
 **Syntaxe des gabarits `html` / `css`** (interprétée par `renderTemplate()`
-dans [`src/templates.ts`](src/templates.ts)) :
+dans [`src/templates/engine.ts`](src/templates/engine.ts)) :
 
 - `{{cls}}` — classe racine unique de la card (suffixe aléatoire). Toujours
   préfixer les classes par `{{cls}}` (ex. `{{cls}}__titre`) : c'est ce qui
@@ -159,10 +169,14 @@ Ce que ce portage change concrètement par rapport à `main` :
 - **UI** : `src/index.ts` (DOM manipulé à la main) devient `src/App.tsx`
   (composants React + hooks d'état) + les primitives shadcn dans
   `src/components/ui/` (Select, Input, Textarea, Label, ToggleGroup, Button).
-- **`src/templates.ts` n'a pas bougé d'un octet** (`git diff main --
-  src/templates.ts` est vide) : c'est la validation concrète de la séparation
-  données/rendu déjà en place — le moteur de templates ne dépend pas de la
-  techno du panneau.
+- **La config des templates n'a pas changé de contenu**, seulement
+  d'organisation : `src/templates.ts` (un seul fichier, sur `main`) est
+  devenu `src/templates/` (un fichier par template, sur cette branche —
+  reorg indépendante de shadcn, faite pour rester lisible en ajoutant des
+  templates). Aucune ligne de `fields`/`html`/`css` n'a changé, ni le moteur
+  de rendu : seule la répartition entre fichiers diffère. C'est quand même
+  la validation concrète de la séparation données/rendu déjà en place — le
+  moteur de templates ne dépend pas de la techno du panneau.
 
 **Coût mesuré** : bundle de ~10 Ko (vanilla, `main`) à ~114 Ko (React +
 Radix + Tailwind, cette branche) une fois compressé dans `bundle.zip` — reste
