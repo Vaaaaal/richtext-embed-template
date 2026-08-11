@@ -1,16 +1,19 @@
 {
   "compilerOptions": {
-    "outDir": "public",
-    "target": "es2017",
+    "target": "es2020",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "jsx": "react-jsx",
     "strict": true,
-    "lib": ["es2017", "dom"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "lib": ["es2020", "dom", "dom.iterable"],
     "typeRoots": ["./node_modules/@types", "./node_modules/@webflow"],
-    // Sans cette liste explicite, tsc tenterait de charger chaque dossier de
-    // node_modules/@webflow comme paquet de types (dont la CLI, qui n'en a pas).
-    "types": ["designer-extension-typings"]
+    "types": ["designer-extension-typings"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
   "exclude": ["node_modules"]
 }

@@ -1,5 +1,10 @@
 # Générateur de cards — Designer Extension Webflow
 
+> **Branche `experiment/shadcn-ui`** : test de portage du panneau vers
+> React + Tailwind + [shadcn/ui](https://ui.shadcn.com), pour comparer avec
+> la version vanilla TS de `main`. Voir [Notes sur l'expérimentation
+> shadcn](#notes-sur-lexpérimentation-shadcn) en bas de page.
+
 Panneau Webflow Designer qui génère des cards (citation, CTA) à partir de
 templates prédéfinis et fournit un code HTML/CSS autonome à coller dans un
 élément Embed ou un champ Rich Text du CMS.
@@ -18,7 +23,7 @@ pour le MVP).
 
 ```bash
 npm install
-npm run dev     # tsc --watch + webflow extension serve (http://localhost:1337)
+npm run dev     # vite build --watch + webflow extension serve (http://localhost:1337)
 ```
 
 Puis, dans le Designer : **Apps & Integrations → l'app en mode développement →
@@ -30,7 +35,7 @@ Extensions ne fonctionnent pas en mode Editor seul).
 
 ```bash
 npm run lint    # eslint
-npm run build   # tsc + webflow extension bundle → bundle.zip
+npm run build   # tsc --noEmit + vite build + webflow extension bundle → bundle.zip
 ```
 
 `bundle.zip` s'uploade ensuite comme nouvelle version de l'app dans le
@@ -48,12 +53,13 @@ Developer Portal Webflow.
 ## Structure
 
 ```
-src/templates.ts   ← config des templates + filtrage par site   (à éditer)
-src/index.ts       ← panneau : formulaire, aperçu, copie        (générique)
-public/index.html  ← coquille du panneau
-public/styles.css  ← UI du panneau (thème sombre du Designer)
-public/*.js        ← sortie de tsc (ne pas éditer)
-webflow.json       ← manifest de l'extension (name, publicDir, size)
+src/templates.ts        ← config des templates + filtrage par site   (à éditer)
+src/App.tsx              ← panneau : formulaire, aperçu, copie        (générique)
+src/components/ui/*      ← composants shadcn (générés par la CLI, ne pas éditer à la main)
+src/index.css            ← Tailwind + tokens de couleur shadcn
+index.html, src/main.tsx ← point d'entrée Vite
+public/                  ← sortie du build Vite (générée, jamais éditée)
+webflow.json              ← manifest de l'extension (name, publicDir, size)
 ```
 
 ## Ajouter ou modifier un template
@@ -142,3 +148,36 @@ affiché en bas du panneau (sélectionnable). Il vient de
 Si l'usage est validé, les templates pourront être servis par une source de
 données externe plutôt que codés en dur, pour les mettre à jour sans republier
 l'extension. Non nécessaire pour ce premier test.
+
+## Notes sur l'expérimentation shadcn
+
+Ce que ce portage change concrètement par rapport à `main` :
+
+- **Stack de build** : `tsc` seul ne suffit plus (JSX + Tailwind). Le projet
+  passe par Vite (`vite build` génère `public/` à partir de `index.html` +
+  `src/main.tsx`), `webflow.json` (`publicDir: "public"`) est inchangé.
+- **UI** : `src/index.ts` (DOM manipulé à la main) devient `src/App.tsx`
+  (composants React + hooks d'état) + les primitives shadcn dans
+  `src/components/ui/` (Select, Input, Textarea, Label, ToggleGroup, Button).
+- **`src/templates.ts` n'a pas bougé d'un octet** (`git diff main --
+  src/templates.ts` est vide) : c'est la validation concrète de la séparation
+  données/rendu déjà en place — le moteur de templates ne dépend pas de la
+  techno du panneau.
+
+**Coût mesuré** : bundle de ~10 Ko (vanilla, `main`) à ~114 Ko (React +
+Radix + Tailwind, cette branche) une fois compressé dans `bundle.zip` — reste
+très loin de la limite de 5 Mo imposée par Webflow, donc pas un facteur
+bloquant en soi.
+
+**Ce que shadcn apporte réellement ici** : des primitives accessibles
+(`Select`, `ToggleGroup` au clavier/lecteur d'écran) et une base de composants
+réutilisable si le panneau grossit. Le rendu visuel obtenu est très proche de
+la version vanilla polie à la main sur `main` — logique, puisque les deux
+utilisent la même palette de couleurs.
+
+**Pour comparer** :
+
+```bash
+git checkout main               && cd card-generator && npm run dev
+git checkout experiment/shadcn-ui && cd card-generator && npm run dev
+```
