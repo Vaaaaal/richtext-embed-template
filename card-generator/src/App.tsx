@@ -10,7 +10,7 @@ import {
   PREVIEW_THEME_CLASSES,
   templatesForSite,
 } from "./lib/template-registry";
-import { buildPreviewThemeCss } from "./lib/site-theme";
+import { buildPreviewThemeCss, summarizeSyncReport } from "./lib/site-theme";
 import { copyToClipboard } from "./lib/clipboard";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
@@ -52,9 +52,37 @@ export default function App() {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   /** Variables du site réinjectées dans l'aperçu (voir lib/site-theme.ts). */
   const [themeCss, setThemeCss] = useState("");
+  const [themeSyncStatus, setThemeSyncStatus] = useState<
+    "pending" | "ok" | "empty" | "error"
+  >("pending");
+  const [themeSyncSummary, setThemeSyncSummary] = useState("");
 
   const frameRef = useRef<HTMLIFrameElement>(null);
   const copyTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  /**
+   * Lit les variables du site et journalise un rapport lisible dans la
+   * console — un échec (classe de thème introuvable, lecture qui échoue,
+   * etc.) doit être visible et diagnosticable, jamais silencieux.
+   */
+  async function syncThemeVariables(): Promise<void> {
+    setThemeSyncStatus("pending");
+    const { css, report } = await buildPreviewThemeCss(PREVIEW_THEME_CLASSES);
+    const summary = summarizeSyncReport(report);
+
+    console.groupCollapsed(
+      `[Générateur de cards] Synchronisation des variables du site — ${
+        report.ok ? "ok" : "échec"
+      }`
+    );
+    console.log(summary);
+    console.log("Rapport complet :", report);
+    console.groupEnd();
+
+    setThemeCss(css);
+    setThemeSyncSummary(summary);
+    setThemeSyncStatus(report.error ? "error" : css ? "ok" : "empty");
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -90,8 +118,7 @@ export default function App() {
       // Lecture des variables du site : plusieurs centaines d'appels au pont
       // Designer, donc volontairement après l'affichage du panneau. Tant
       // qu'elle n'a pas abouti, l'aperçu utilise les replis des var().
-      const css = await buildPreviewThemeCss(PREVIEW_THEME_CLASSES);
-      if (!cancelled) setThemeCss(css);
+      if (!cancelled) await syncThemeVariables();
     })();
 
     return () => {
@@ -237,6 +264,24 @@ export default function App() {
         </p>
         <p className="mt-2.5 text-[10px] break-all text-neutral-600 select-text">
           {siteId ? `siteId : ${siteId}` : "siteId indisponible"}
+        </p>
+        <p
+          className="mt-1 text-[10px] text-neutral-600"
+          title={themeSyncSummary || undefined}
+        >
+          Design system :{" "}
+          {themeSyncStatus === "pending" && "synchronisation…"}
+          {themeSyncStatus === "ok" && "synchronisé"}
+          {themeSyncStatus === "empty" && "aucune variable trouvée"}
+          {themeSyncStatus === "error" && "échec — voir console"}
+          {" · "}
+          <button
+            type="button"
+            onClick={() => void syncThemeVariables()}
+            className="underline hover:text-foreground"
+          >
+            resynchroniser
+          </button>
         </p>
       </aside>
 

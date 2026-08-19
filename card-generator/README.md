@@ -233,6 +233,19 @@ pour un client dont le design system utilise d'autres noms.
 
 Toute la chaîne est best-effort : en cas d'échec, l'aperçu retombe sur les
 valeurs de repli des `var()` et le code copié reste correct dans tous les cas.
+Vérifié contre le CSS réellement publié par un site Webflow : les modes de
+variables se traduisent bien en overrides de custom properties sur la classe
+de thème (`.u-theme-dark{--_theme---heading:var(--swatch--white);…}`), ce
+que `site-theme.ts` reconstruit.
+
+**Diagnostic** : un échec partiel (classe de thème introuvable sur le site,
+lecture d'une variable qui échoue) n'est jamais silencieux. Le bas du
+panneau affiche un statut (« synchronisé » / « échec — voir console » / …)
+avec un lien **resynchroniser**, et la console du panneau reçoit le détail
+complet — nombre de collections trouvées, par classe : trouvée ou non,
+nombre de modes résolus, nombre de caractères de CSS produits. En cas de
+souci, ouvrir la console du panneau (clic droit → Inspecter dans le
+Designer) est le premier réflexe.
 
 ## Filtrage par site (multi-client)
 

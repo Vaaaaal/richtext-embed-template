@@ -9,18 +9,48 @@
  *
  * Les thèmes du site reposent sur les *modes de variables* Webflow : une
  * classe comme `.u-theme-dark` bascule le mode de la collection, ce qui fait
- * résoudre `--_theme---background` vers une autre valeur. On reproduit donc,
- * pour chaque classe de thème, le bloc `.u-theme-dark { --x: … }`
- * correspondant.
+ * résoudre `--_theme---background` vers une autre valeur. Vérifié contre le
+ * CSS publié du site : Webflow génère bien
+ *   .u-theme-dark{ --_theme---heading:var(--swatch--white); … }
+ * — on reproduit donc, pour chaque classe de thème, le bloc équivalent.
  *
- * Tout est best-effort : en cas d'échec on renvoie "" et les templates
- * retombent sur les valeurs de repli de leurs `var(…, fallback)`.
+ * Tout est best-effort : en cas d'échec on renvoie une CSS vide et les
+ * templates retombent sur les valeurs de repli de leurs `var(…, fallback)`.
+ * Le résultat inclut un rapport de diagnostic (voir SyncReport) pour rendre
+ * les échecs partiels visibles au lieu de silencieux.
  */
 
 /** Vue structurelle minimale d'une variable, pour éviter l'union de types. */
 interface AnyVariable {
   getCSSName(): Promise<string>;
-  get(options?: { mode?: VariableMode }): Promise<unknown>;
+  get(options?: {
+    mode?: VariableMode;
+    customValues?: boolean;
+  }): Promise<unknown>;
+}
+
+export interface ClassSyncReport {
+  /** false si `getStyleByName` n'a pas trouvé cette classe sur le site. */
+  styleFound: boolean;
+  /** Nombre de collections pour lesquelles cette classe impose un mode. */
+  collectionsWithMode: number;
+  /** Nombre de déclarations `--x: y;` effectivement produites. */
+  declarationCount: number;
+}
+
+export interface SyncReport {
+  ok: boolean;
+  collectionCount: number;
+  /** Variables dont la lecture a échoué (nom de collection ignoré : anonyme côté API). */
+  variableFailures: number;
+  perClass: Record<string, ClassSyncReport>;
+  /** Message d'erreur si tout l'appel a échoué (ex. API indisponible hors Designer). */
+  error?: string;
+}
+
+export interface SyncResult {
+  css: string;
+  report: SyncReport;
 }
 
 /**
@@ -58,7 +88,8 @@ async function serializeValue(value: unknown): Promise<string | null> {
 /** Déclarations `--nom: valeur;` de toutes les variables, pour un mode donné. */
 async function declarationsForMode(
   collection: VariableCollection,
-  mode?: VariableMode
+  mode: VariableMode | undefined,
+  onFailure: () => void
 ): Promise<string> {
   const variables = await collection.getAllVariables();
   const parts = await Promise.all(
@@ -67,11 +98,16 @@ async function declarationsForMode(
       try {
         const [name, raw] = await Promise.all([
           v.getCSSName(),
-          v.get(mode ? { mode } : undefined),
+          v.get({ mode, customValues: true }),
         ]);
         const value = await serializeValue(raw);
-        return value === null ? "" : `${name}:${value};`;
+        if (value === null) {
+          onFailure();
+          return "";
+        }
+        return `${name}:${value};`;
       } catch {
+        onFailure();
         return "";
       }
     })
@@ -80,7 +116,9 @@ async function declarationsForMode(
 }
 
 /**
- * Construit la feuille de style à injecter dans l'iframe d'aperçu.
+ * Construit la feuille de style à injecter dans l'iframe d'aperçu, et un
+ * rapport de diagnostic pour identifier précisément un échec partiel
+ * (ex. classe de thème introuvable, collection sans mode correspondant).
  *
  * @param themeClasses classes utilitaires de thème du site à reproduire
  *                     (ex. ["u-theme-light", "u-theme-dark"]). Chacune est
@@ -89,19 +127,36 @@ async function declarationsForMode(
  */
 export async function buildPreviewThemeCss(
   themeClasses: string[]
-): Promise<string> {
+): Promise<SyncResult> {
+  const report: SyncReport = {
+    ok: false,
+    collectionCount: 0,
+    variableFailures: 0,
+    perClass: {},
+  };
+  const fail = () => {
+    report.variableFailures++;
+  };
+
   try {
     const collections = await webflow.getAllVariableCollections();
-    if (collections.length === 0) return "";
+    report.collectionCount = collections.length;
+    if (collections.length === 0) return { css: "", report };
 
     // Mode de base -> :root, ce qui couvre aussi l'option « Hériter ».
     const base = await Promise.all(
-      collections.map((c) => declarationsForMode(c))
+      collections.map((c) => declarationsForMode(c, undefined, fail))
     );
     let css = `:root{${base.join("")}}`;
 
     for (const className of themeClasses) {
       const style = await webflow.getStyleByName(className);
+      const classReport: ClassSyncReport = {
+        styleFound: !!style,
+        collectionsWithMode: 0,
+        declarationCount: 0,
+      };
+      report.perClass[className] = classReport;
       if (!style) continue;
 
       let decls = "";
@@ -109,14 +164,33 @@ export async function buildPreviewThemeCss(
         // Une classe n'impose un mode que sur certaines collections.
         const mode = await style.getVariableMode(collection);
         if (!mode) continue;
-        decls += await declarationsForMode(collection, mode);
+        classReport.collectionsWithMode++;
+        decls += await declarationsForMode(collection, mode, fail);
       }
+      classReport.declarationCount = decls.length;
       if (decls) css += `.${className}{${decls}}`;
     }
 
-    return css;
+    report.ok = true;
+    return { css, report };
   } catch (err) {
-    console.warn("Variables du site indisponibles pour l'aperçu :", err);
-    return "";
+    report.error = err instanceof Error ? err.message : String(err);
+    return { css: "", report };
   }
+}
+
+/** Résumé du rapport en une ligne, pour la console ou l'UI. */
+export function summarizeSyncReport(report: SyncReport): string {
+  if (report.error) return `échec : ${report.error}`;
+  if (report.collectionCount === 0) return "aucune collection de variables trouvée";
+
+  const classSummary = Object.entries(report.perClass)
+    .map(([name, c]) =>
+      c.styleFound
+        ? `${name} (${c.collectionsWithMode} mode(s), ${c.declarationCount} car.)`
+        : `${name} (classe introuvable)`
+    )
+    .join(", ");
+
+  return `${report.collectionCount} collection(s), ${report.variableFailures} lecture(s) en échec — ${classSummary}`;
 }
