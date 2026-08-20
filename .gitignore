@@ -1,1 +1,9 @@
 .DS_Store
+node_modules/
+
+# Sortie du build Vite (regénérée par npm run dev / npm run build) : c'est le
+# publicDir servi par webflow.json.
+public/
+
+# Bundle d'upload
+bundle.zip

@@ -131,8 +131,7 @@ ce qui le garde compatible avec une source externe plus tard (voir plus bas).
 
 Puis, dans
 [`src/lib/template-registry.ts`](src/lib/template-registry.ts) : importer le
-nouveau template et l'ajouter au tableau `TEMPLATES` (et à
-`DEFAULT_TEMPLATE_IDS` s'il doit être visible par défaut). Le formulaire,
+nouveau template et l'ajouter au tableau `TEMPLATES`. Le formulaire,
 l'aperçu et le code généré se construisent automatiquement — aucune autre
 modification nécessaire.
 
@@ -212,27 +211,20 @@ identique sur la même page peut faire planter les deux. Vérifié avec deux
 cards du même template collées côte à côte, valeurs indépendantes,
 interaction sur l'une sans effet sur l'autre.
 
-## Filtrage par site (multi-client)
+## Multi-client : un repo par client
 
-Un seul bundle sert tous les clients. `templatesBySite` associe un `siteId` à
-la liste des templates autorisés :
+Pas de filtrage par site dans le code : **un repo = un client**, avec ses
+propres templates dans `src/templates/` et sa propre app Webflow, enregistrée
+directement dans le workspace de ce client. Pour un nouveau client, on part
+de ce repo (GitHub → "Use this template", pour un historique propre plutôt
+qu'un fork) et on adapte `src/templates/`.
 
-```ts
-export const templatesBySite: Record<string, string[]> = {
-  "6512ab34cd56ef7890123456": ["quote"],   // ce site n'a que la citation
-};
-```
-
-Les sites absents de cet objet reçoivent `DEFAULT_TEMPLATE_IDS`.
-
-Pour relever le `siteId` d'un site : ouvrir l'extension dessus, l'ID est
-affiché en bas du panneau (sélectionnable). Il vient de
-`webflow.getSiteInfo()`.
-
-> **À faire pour Iskera** : l'entrée est encore un placeholder commenté dans
-> `templatesBySite`. Tant qu'elle n'est pas renseignée, Iskera voit les deux
-> templates via le fallback par défaut — ce qui est le comportement attendu
-> pour ce premier test.
+Compromis assumé : une amélioration du panneau ou du moteur ne se propage pas
+automatiquement aux repos déjà créés, il faut la reporter à la main. Viable
+tant que le nombre de clients reste faible ; si ça devient un vrai irritant,
+l'option envisagée est d'extraire le panneau + le moteur dans un package
+partagé (`src/lib/`, `src/App.tsx`, `src/components/ui/`), chaque repo client
+ne gardant que `src/templates/`.
 
 ## Notes d'implémentation
 

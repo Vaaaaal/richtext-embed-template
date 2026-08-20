@@ -6,7 +6,7 @@ import {
   TemplateField,
   renderTemplate,
 } from "./lib/template-engine";
-import { templatesForSite } from "./lib/template-registry";
+import { TEMPLATES } from "./lib/template-registry";
 import { copyToClipboard } from "./lib/clipboard";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
@@ -35,15 +35,16 @@ function newScopeId(): string {
   return Math.random().toString(36).slice(2, 8);
 }
 
-export default function App() {
-  const [ready, setReady] = useState(false);
-  const [templates, setTemplates] = useState<CardTemplate[]>([]);
-  const [siteId, setSiteId] = useState<string | null>(null);
-  const [siteName, setSiteName] = useState<string | undefined>(undefined);
+const firstTemplate = TEMPLATES[0] as CardTemplate | undefined;
 
-  const [currentId, setCurrentId] = useState<string | null>(null);
-  const [values, setValues] = useState<Record<string, FieldValues>>({});
-  const [scopes, setScopes] = useState<Record<string, string>>({});
+export default function App() {
+  const [currentId, setCurrentId] = useState<string | null>(firstTemplate?.id ?? null);
+  const [values, setValues] = useState<Record<string, FieldValues>>(() =>
+    firstTemplate ? { [firstTemplate.id]: defaultsFor(firstTemplate) } : {}
+  );
+  const [scopes, setScopes] = useState<Record<string, string>>(() =>
+    firstTemplate ? { [firstTemplate.id]: newScopeId() } : {}
+  );
   const [showCode, setShowCode] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>("idle");
 
@@ -51,47 +52,20 @@ export default function App() {
   const copyTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    let cancelled = false;
-
     void (async () => {
       try {
         await webflow.setExtensionSize("large");
       } catch {
-        /* taille par défaut du manifest */
+        /* taille par défaut du manifest, ou webflow indisponible (hors Designer) */
       }
-
-      let info: { siteId?: string; siteName?: string } | null = null;
-      try {
-        info = await webflow.getSiteInfo();
-      } catch (err) {
-        console.warn("getSiteInfo() indisponible :", err);
-      }
-      if (cancelled) return;
-
-      const list = templatesForSite(info?.siteId);
-      setTemplates(list);
-      setSiteId(info?.siteId ?? null);
-      setSiteName(info?.siteName);
-
-      if (list.length > 0) {
-        const first = list[0];
-        setCurrentId(first.id);
-        setValues({ [first.id]: defaultsFor(first) });
-        setScopes({ [first.id]: newScopeId() });
-      }
-      setReady(true);
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  const current = templates.find((t) => t.id === currentId) ?? null;
+  const current = TEMPLATES.find((t) => t.id === currentId) ?? null;
 
   function selectTemplate(id: string): void {
     setCurrentId(id);
-    const tpl = templates.find((t) => t.id === id);
+    const tpl = TEMPLATES.find((t) => t.id === id);
     if (!tpl) return;
     setValues((v) => (v[id] ? v : { ...v, [id]: defaultsFor(tpl) }));
     setScopes((s) => (s[id] ? s : { ...s, [id]: newScopeId() }));
@@ -140,22 +114,10 @@ export default function App() {
     copyTimeout.current = setTimeout(() => setCopyState("idle"), 1800);
   }
 
-  if (!ready) return null;
-
-  if (templates.length === 0) {
-    return (
-      <p className="p-8 text-center text-muted-foreground">
-        {siteName
-          ? `Aucun template n'est configuré pour « ${siteName} ».`
-          : "Aucun template n'est configuré pour ce site."}
-      </p>
-    );
-  }
-
   return (
     <div className="flex h-screen min-h-0">
       <aside className="w-68 shrink-0 overflow-y-auto border-r border-border bg-card p-5">
-        {templates.length > 1 && (
+        {TEMPLATES.length > 1 && (
           <div className="mb-4.5 space-y-1.5 border-b border-border pb-4">
             <Label
               htmlFor="template-picker"
@@ -168,7 +130,7 @@ export default function App() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {templates.map((tpl) => (
+                {TEMPLATES.map((tpl) => (
                   <SelectItem key={tpl.id} value={tpl.id}>
                     {tpl.label}
                   </SelectItem>
@@ -226,9 +188,6 @@ export default function App() {
           Le code copié est autonome (styles isolés dans une balise
           &lt;style&gt; préfixée) : colle-le dans un élément Embed ou dans un
           champ Rich Text du CMS.
-        </p>
-        <p className="mt-2.5 text-[10px] break-all text-neutral-600 select-text">
-          {siteId ? `siteId : ${siteId}` : "siteId indisponible"}
         </p>
       </aside>
 
