@@ -110,7 +110,11 @@ export default function App() {
     const vals = values[current.id] ?? {};
     const cls = `dd-${current.id}-${scopes[current.id] ?? ""}`;
     const built = renderTemplate(current, vals, cls);
-    return `<style>\n${built.css}\n</style>\n${built.html}`;
+    // current.js n'est jamais passé par renderTemplate() : il ne contient
+    // aucun placeholder à substituer, c'est un texte figé (voir
+    // lib/template-engine.ts).
+    const script = current.js ? `\n<script>\n${current.js}\n</script>` : "";
+    return `<style>\n${built.css}\n</style>\n${built.html}${script}`;
   }, [current, values, scopes]);
 
   function handleFrameLoad(): void {
@@ -299,6 +303,26 @@ function FieldControl({
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+      </div>
+    );
+  }
+
+  if (field.type === "select") {
+    return (
+      <div className="space-y-1.5">
+        {labelEl}
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger id={`f-${field.id}`} className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(field.options ?? []).map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     );
   }

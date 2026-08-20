@@ -7,6 +7,24 @@ export const quoteCard: CardTemplate = {
   label: "Citation",
   fields: [
     {
+      id: "theme",
+      label: "Thème",
+      type: "select",
+      default: "light-2",
+      options: [
+        { value: "light", label: "Light" },
+        { value: "light-2", label: "Light 2" },
+        { value: "dark", label: "Dark" },
+        { value: "brand", label: "Brand" },
+      ],
+      tokens: {
+        light: { class: "theme-light" },
+        "light-2": { class: "theme-light-2" },
+        dark: { class: "theme-dark" },
+        brand: { class: "theme-brand" },
+      },
+    },
+    {
       id: "text",
       label: "Citation",
       type: "textarea",
@@ -24,31 +42,7 @@ export const quoteCard: CardTemplate = {
       // "" : pas de photo valide -> {{#if photo}} masque l'avatar plutôt
       // que de pointer vers une image cassée.
       urlFallback: "",
-    },
-    {
-      id: "theme",
-      label: "Thème",
-      type: "segmented",
-      default: "light",
-      options: [
-        { value: "light", label: "Clair" },
-        { value: "dark", label: "Sombre" },
-      ],
-      tokens: {
-        light: {
-          bg: "#E7EAEC",
-          fg: "#0F1F2E",
-          sub: "rgba(15,31,46,.65)",
-          icon: "#2E2AE4",
-        },
-        dark: {
-          bg: "#0F1F2E",
-          fg: "#ffffff",
-          sub: "rgba(255,255,255,.65)",
-          icon: "#D7F86C",
-        },
-      },
-    },
+    }
   ],
   html,
   css,

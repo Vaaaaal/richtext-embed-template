@@ -7,6 +7,24 @@ export const ctaCard: CardTemplate = {
   label: "CTA",
   fields: [
     {
+      id: "theme",
+      label: "Thème",
+      type: "select",
+      default: "light-2",
+      options: [
+        { value: "light", label: "Light" },
+        { value: "light-2", label: "Light 2" },
+        { value: "dark", label: "Dark" },
+        { value: "brand", label: "Brand" },
+      ],
+      tokens: {
+        light: { class: "theme-light" },
+        "light-2": { class: "theme-light-2" },
+        dark: { class: "theme-dark" },
+        brand: { class: "theme-brand" },
+      },
+    },
+    {
       id: "title",
       label: "Titre",
       type: "textarea",
@@ -27,7 +45,7 @@ export const ctaCard: CardTemplate = {
     },
     {
       id: "btnLink",
-      label: "Lien du bouton",
+      label: "Lien",
       type: "url",
       default: "",
       placeholder: "https://…",

@@ -1,49 +1,121 @@
-.{{cls}} {
-  box-sizing: border-box;
-  background: #e7eaec;
-  color: #0f1f2e;
-  border-radius: 20px;
-  padding: 44px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+.{{cls}}_card-cta {
+  /* Card */
+  --card-background: #ffffff;
+  --card-text-color: color-mix(in srgb, #0f242e 90%, transparent);
+  --card-heading-color: #0f242e;
+  
+  /* Button */
+  --btn-background: #0f242e;
+  --btn-background-hover: #bbc6e3;
+  --btn-text-color: #ffffff;
+  --btn-text-color-hover: #0f242e;
+  --btn-background-icon: #e0fd8d;
+  --btn-background-icon-hover: #0f242e;
+  --btn-icon: #0f242e;
+  --btn-icon-hover: #ffffff;
+
+  border-radius: 8px;
+  padding: clamp(1rem, 5vw, 2.5rem);
+  background: var(--card-background);
+  color: var(--card-text-color);
+  position: relative;
+  font-family: "Plus Jakarta Sans — Variable", Arial, sans-serif;
+  transition: all 0.2s ease-out;
 }
-.{{cls}} * {
-  box-sizing: border-box;
+
+.{{cls}}_card-cta_link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
-.{{cls}}__title {
-  font-size: 30px;
-  line-height: 1.25;
-  margin: 0 0 16px;
-  font-weight: 600;
-  color: #0f1f2e;
+
+.{{cls}}_card-cta_content {
+  position: relative;
+  z-index: 2;
 }
-.{{cls}}__text {
-  font-size: 15px;
-  line-height: 1.6;
-  color: #4b5560;
-  margin: 0 0 26px;
+
+.{{cls}}_card-cta p {
+  padding: 0;
+  margin: 0;
 }
-.{{cls}}__btn {
+
+.{{cls}}_card-cta_title {
+  color: var(--card-heading-color);
+  font-size: clamp(1.5 * 1rem, ((1.5 - ((1.875 - 1.5) / (74 - 20) * 20)) * 1rem + ((1.875 - 1.5) / (74 - 20) * 100vw)), 1.875 * 1rem);
+  margin-bottom: clamp(1.75 * 1rem, ((1.75 - ((2 - 1.75) / (74 - 20) * 20)) * 1rem + ((2 - 1.75) / (74 - 20) * 100vw)), 2 * 1rem) !important;
+  font-weight: 500;
+  line-height: 1.15em;
+}
+
+.{{cls}}_card-cta_text {
+  color: var(--card-text-color);
+  font-size: clamp(0.875 * 1rem, ((0.875 - ((1 - 0.875) / (74 - 20) * 20)) * 1rem + ((1 - 0.875) / (74 - 20) * 100vw)), 1 * 1rem);
+  line-height: 1.65em;
+}
+
+.{{cls}}_card-cta_btn {
+  background: var(--btn-background);
+  color: var(--btn-text-color);
+  border: none;
+  border-radius: 50vh;
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  background: #0f1f2e;
-  color: #fff;
-  padding: 6px 22px 6px 6px;
-  border-radius: 999px;
-  text-decoration: none;
-  font-size: 14.5px;
-  font-weight: 500;
+  gap: 1rem;
+  transition: all 0.2s ease-out;
+  margin-top: clamp(2 * 1rem, ((2 - ((2.5 - 2) / (74 - 20) * 20)) * 1rem + ((2.5 - 2) / (74 - 20) * 100vw)), 2.5 * 1rem) !important;
+  font-size: clamp(0.875 * 1rem, ((0.75 - ((0.875 - 0.75) / (74 - 20) * 20)) * 1rem + ((0.875 - 0.75) / (74 - 20) * 100vw)), 0.875 * 1rem);
 }
-.{{cls}}__arrow {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #d7f86c;
-  color: #0f1f2e;
+
+.{{cls}}_card-cta_btn_arrow {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 100vh;
+  background: var(--btn-background-icon);
+  color: var(--btn-icon);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  font-size: 16px;
-  line-height: 1;
+}
+
+.{{cls}}_card-cta_btn_arrow svg {
+  width: 0.7rem;
+}
+
+/* Hover State */
+.{{cls}}_card-cta:has(.{{cls}}_card-cta_link[href]:not([href=""]):not([href="#"])):hover .{{cls}}_card-cta_btn {
+  background: var(--btn-background-hover);
+  color: var(--btn-text-color-hover);
+}
+.{{cls}}_card-cta:has(.{{cls}}_card-cta_link[href]:not([href=""]):not([href="#"])):hover .{{cls}}_card-cta_btn_arrow {
+  background: var(--btn-background-icon-hover);
+  color: var(--btn-icon-hover);
+}
+
+/* ---------------------- Mode - Light 2 ---------------------- */
+.{{cls}}_card-cta.theme-light-2 {
+  /* Card */
+  --card-background: #e9ecef;
+}
+
+/* ---------------------- Mode - Dark ---------------------- */
+.{{cls}}_card-cta.theme-dark {
+  /* Card */
+  --card-background: #0f242e;
+  --card-text-color: color-mix(in srgb, #ffffff 90%, transparent);
+  --card-heading-color: #ffffff;
+
+  /* Button */
+  --btn-background: #ffffff;
+  --btn-text-color: #0f242e;
+}
+
+/* ---------------------- Mode - Brand ---------------------- */
+.{{cls}}_card-cta.theme-brand {
+  /* Card */
+  --card-background: #bbc6e3;
+
+  /* Button */
+  --btn-background-hover: #ffffff;
 }

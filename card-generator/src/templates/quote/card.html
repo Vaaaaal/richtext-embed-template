@@ -1,14 +1,19 @@
-<div class="{{cls}}">
-  <svg class="{{cls}}__mark" width="52" height="32" viewBox="0 0 64 40" fill="none" aria-hidden="true">
-    <path d="M0 40L20 0H28L8 40H0Z" fill="currentColor" />
-    <path d="M28 40L48 0H56L36 40H28Z" fill="currentColor" />
+<div class="{{cls}} {{theme.class}}">
+  <svg class="{{cls}}_mark" viewBox="0 0 68 45" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M67.7016 6.77748L60.9105 1.09647e-06L35.8262 34.1927L35.8262 39.6269L35.8262 45L64.6425 45L64.6425 34.1927L44.0856 34.1927L67.7016 6.77748Z" fill="currentColor"/>
+    <path d="M31.8754 6.77748L25.0843 1.09647e-06L-1.49461e-06 34.1927L-1.73215e-06 39.6269L5.05349e-05 45L28.8163 45L28.8163 34.1927L8.25945 34.1927L31.8754 6.77748Z" fill="currentColor"/>
   </svg>
-  <p class="{{cls}}__text">{{text}}</p>
-  <div class="{{cls}}__author">
-    {{#if photo}}<img class="{{cls}}__avatar" src="{{photo}}" alt="{{name}}" />{{/if}}
-    <div>
-      <strong class="{{cls}}__name">{{name}}</strong>
-      <span class="{{cls}}__role">{{role}}</span>
+
+  <p class="{{cls}}_text">{{text}}</p>
+
+  <div class="{{cls}}_author">
+    {{#if photo}}
+      <img class="{{cls}}_avatar" src="{{photo}}" alt="{{name}}" />
+    {{/if}}
+
+    <div class="{{cls}}_author_info">
+      <span class="{{cls}}_name">{{name}}</span>
+      <span class="{{cls}}_role">{{role}}</span>
     </div>
   </div>
 </div>

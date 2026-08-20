@@ -1,8 +1,24 @@
-<div class="{{cls}}">
-  <h2 class="{{cls}}__title">{{title}}</h2>
-  <p class="{{cls}}__text">{{text}}</p>
-  <a class="{{cls}}__btn" href="{{btnLink}}">
-    <span class="{{cls}}__arrow" aria-hidden="true">&#8594;</span>
-    {{btnText}}
-  </a>
+<div class="{{cls}}_card-cta {{theme.class}}">
+  {{#if btnLink}}
+    <a class="{{cls}}_card-cta_link" href="{{btnLink}}"></a>
+  {{/if}}
+
+  <div class="{{cls}}_card-cta_content">
+    <p class="{{cls}}_card-cta_title">{{title}}</p>
+    <p class="{{cls}}_card-cta_text">{{text}}</p>
+    
+    {{#if btnText}}
+      <button class="{{cls}}_card-cta_btn">
+        <span class="{{cls}}_card-cta_btn_arrow" aria-hidden="true">
+          <svg viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.78728 0.353515L10.5317 6.09795L4.78728 11.8424" stroke="currentColor"/>
+            <path d="M10.2124 6.0979L5.77227e-05 6.0979" stroke="currentColor"/>
+          </svg>
+        </span>
+        <span class="{{cls}}_card-cta_btn_text">
+          {{btnText}}
+        </span>
+      </button>
+    {{/if}}
+  </div>
 </div>

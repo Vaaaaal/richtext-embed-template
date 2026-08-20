@@ -117,7 +117,7 @@ export const monTemplate: CardTemplate = {
   label: "Mon template",
   fields: [
     { id: "titre", label: "Titre", type: "text", default: "Bonjour" },
-    // types disponibles : "text" | "textarea" | "url" | "segmented"
+    // types disponibles : "text" | "textarea" | "url" | "segmented" | "select"
   ],
   html,
   css,
@@ -135,6 +135,12 @@ nouveau template et l'ajouter au tableau `TEMPLATES` (et à
 `DEFAULT_TEMPLATE_IDS` s'il doit être visible par défaut). Le formulaire,
 l'aperçu et le code généré se construisent automatiquement — aucune autre
 modification nécessaire.
+
+**`segmented` vs `select`** : même mécanique (`options` + `tokens`
+optionnels), deux widgets différents. `segmented` affiche un groupe de
+boutons — lisible jusqu'à 2-3 choix, au-delà les boutons se compressent ou
+passent à la ligne. `select` affiche un menu déroulant — préférable dès que
+la liste dépasse 3 options.
 
 > **À savoir sur les fichiers `.css`** : à cause des `{{cls}}` dans les
 > sélecteurs, ce n'est pas du CSS syntaxiquement valide, et l'éditeur y
@@ -155,9 +161,9 @@ modification nécessaire.
 - `{{champId}}` — valeur saisie pour ce champ, déjà échappée automatiquement
   (`escapeAttr` pour texte, `safeUrl` pour les champs `"url"`). Ne jamais
   interpoler une valeur client sans passer par un champ déclaré.
-- `{{champId.token}}` — pour un champ `"segmented"` avec `tokens` (ex. les
-  couleurs du thème clair/sombre de la citation) : valeur dérivée selon
-  l'option choisie.
+- `{{champId.token}}` — pour un champ `"segmented"` ou `"select"` avec
+  `tokens` (ex. les couleurs du thème clair/sombre de la citation) : valeur
+  dérivée selon l'option choisie.
 - `{{#if champId}}…{{/if}}` — le bloc n'est rendu que si le champ résout à
   une valeur non vide. Utile pour un champ optionnel (ex. la photo d'auteur) :
   mettre `urlFallback: ""` sur ce champ pour qu'une valeur vide ou invalide
@@ -165,6 +171,46 @@ modification nécessaire.
 
 Un nouveau suffixe de classe est tiré après chaque copie réussie, pour que la
 card suivante ait ses propres classes.
+
+## Ajouter du JS à un template (simulateurs, interactivité)
+
+Optionnel, pour les templates qui en ont vraiment besoin — la plupart n'en
+auront jamais. Un `CardTemplate` peut avoir un champ `js` :
+
+```ts
+import { CardTemplate, withInitGuard } from "@/lib/template-engine";
+import js from "./card.js?raw";
+...
+export const monTemplate: CardTemplate = {
+  ...
+  js: withInitGuard("dd-hook-mon-template", js),
+};
+```
+
+**Règle non négociable : jamais de `{{champId}}` dans `card.js`.** Le
+formulaire n'expose jamais de champ "écris ton JS" au client — mais si un
+script recopie une valeur saisie par le client directement dans du code
+exécuté, la faille revient par la bande, même si c'est toi qui as écrit le
+script. Si le script a besoin d'une valeur du client, il la relit dans le
+HTML déjà rendu (`component.querySelector(...)`), jamais via un
+placeholder. `js` n'est d'ailleurs jamais passé par `renderTemplate()` —
+aucun placeholder n'y est de toute façon interprété.
+
+**`withInitGuard(hookClass, setup)`** existe parce qu'une card copiée
+duplique tout son `<script>` — deux cards du même template sur une page,
+c'est le même script présent deux fois. `hookClass` doit être une classe
+**fixe** par template (jamais `{{cls}}`, qui change à chaque copie), posée
+en plus de `{{cls}}` sur la racine du HTML :
+
+```html
+<div class="{{cls}} dd-hook-mon-template">
+```
+
+Chaque exécution du script retrouve alors toutes les cards de ce type sur
+la page et ignore celles déjà initialisées — sans ça, une deuxième card
+identique sur la même page peut faire planter les deux. Vérifié avec deux
+cards du même template collées côte à côte, valeurs indépendantes,
+interaction sur l'une sans effet sur l'autre.
 
 ## Filtrage par site (multi-client)
 
