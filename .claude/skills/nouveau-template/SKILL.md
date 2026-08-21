@@ -11,10 +11,12 @@ l'enregistre dans `src/lib/template-registry.ts`. Le moteur qui interprète
 tout ça est `src/lib/template-engine.ts` — générique, il ne change jamais
 pour un nouveau template.
 
-**Les deux templates existants, `src/templates/quote/` et
-`src/templates/cta/`, sont les exemples vivants à consulter** — plus fiables
-que tout ce qui est recopié ici, puisqu'ils évoluent avec le projet. En cas
-de doute sur une convention, les relire prime sur ce document.
+Ce skill est **autosuffisant** : l'annexe en bas de ce document contient un
+exemple minimal complet et fonctionnel, à utiliser tel quel comme point de
+départ. Aucune étape ne suppose qu'un template particulier (`quote`, `cta`
+ou autre) existe déjà dans ce repo — un repo par client ne garde jamais que
+les templates propres à ce client, `quote`/`cta` peuvent très bien avoir
+été supprimés ou n'avoir jamais existé ici.
 
 ## Étape 1 — Cerner le besoin
 
@@ -31,16 +33,20 @@ Si ce n'est pas déjà clair dans la demande, établir :
 Ne pas (re)poser une question dont la réponse est déjà donnée dans la
 demande initiale.
 
-## Étape 2 — Partir d'un exemple existant
+## Étape 2 — Partir d'un exemple
 
-Dupliquer le dossier le plus proche du résultat visé plutôt que d'écrire les
-trois fichiers de zéro :
+Regarder d'abord ce qui existe réellement dans **ce** repo (`ls
+src/templates/`) :
 
-- `src/templates/quote/` — racine `{{cls}}` nue, enfants `{{cls}}_partie`.
-  Le plus simple, à préférer par défaut.
-- `src/templates/cta/` — racine `{{cls}}_nom-composant`, lien en overlay
-  toute la carte, bouton conditionnel. À prendre en référence si le
-  template a une zone cliquable ou des blocs optionnels imbriqués.
+- **Au moins un template déjà présent** : dupliquer le plus proche du
+  résultat visé plutôt que d'écrire les trois fichiers de zéro. Ces
+  templates sont propres à ce client et plus à jour que ce document sur le
+  style maison (nommage, unités, éventuelles librairies de classes
+  utilitaires) — à préférer quand ils existent.
+- **`src/templates/` vide, ou aucun template pertinent** (repo neuf, ou
+  les seuls templates existants ont été volontairement supprimés) : partir
+  de l'exemple minimal fourni en annexe, en bas de ce document. Il est
+  complet et testé, aucune dépendance à un fichier particulier du repo.
 
 ## Étape 3 — `card.html`
 
@@ -210,3 +216,105 @@ navigateur (ou capturer via Playwright), tester au moins un changement de
 thème et un champ optionnel vide/rempli. Ne pas se fier uniquement au
 type-check — il ne dit rien du rendu visuel ni d'une classe HTML qui ne
 correspond à aucune règle CSS.
+
+## Annexe — exemple minimal autosuffisant
+
+Une card "chiffre clé" : un chiffre, un libellé, un lien optionnel, un
+thème clair/sombre. Couvre `text`, `url` + `urlFallback` + `{{#if}}`, et le
+motif thème complet (Étape 5) — testé de bout en bout (build + rendu
+réel), à utiliser tel quel comme point de départ.
+
+`src/templates/stat/card.html` :
+
+```html
+<div class="{{cls}} {{theme.class}}">
+  <span class="{{cls}}__value">{{value}}</span>
+  <p class="{{cls}}__label">{{label}}</p>
+  {{#if link}}<a class="{{cls}}__link" href="{{link}}">En savoir plus</a>{{/if}}
+</div>
+```
+
+`src/templates/stat/card.css` :
+
+```css
+.{{cls}} {
+  --card-background: #ffffff;
+  --card-text-color: #0f242e;
+  background: var(--card-background);
+  color: var(--card-text-color);
+  border-radius: 8px;
+  padding: 2rem;
+}
+.{{cls}}.theme-dark {
+  --card-background: #0f242e;
+  --card-text-color: #ffffff;
+}
+.{{cls}}__value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+.{{cls}}__label {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+}
+.{{cls}}__link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: inherit;
+}
+```
+
+`src/templates/stat/index.ts` :
+
+```ts
+import { CardTemplate } from "@/lib/template-engine";
+import html from "./card.html?raw";
+import css from "./card.css?raw";
+
+export const statCard: CardTemplate = {
+  id: "stat",
+  label: "Statistique",
+  fields: [
+    { id: "value", label: "Chiffre", type: "text", default: "98%" },
+    {
+      id: "label",
+      label: "Libellé",
+      type: "text",
+      default: "de satisfaction client",
+    },
+    {
+      id: "link",
+      label: "Lien (optionnel)",
+      type: "url",
+      default: "",
+      placeholder: "https://…",
+      urlFallback: "", // vide -> {{#if link}} masque le lien
+    },
+    {
+      id: "theme",
+      label: "Thème",
+      type: "segmented",
+      default: "light",
+      options: [
+        { value: "light", label: "Clair" },
+        { value: "dark", label: "Sombre" },
+      ],
+      tokens: {
+        light: { class: "" },
+        dark: { class: "theme-dark" },
+      },
+    },
+  ],
+  html,
+  css,
+};
+```
+
+Puis dans `src/lib/template-registry.ts` (Étape 8) :
+
+```ts
+import { statCard } from "@/templates/stat";
+// ...
+export const TEMPLATES: CardTemplate[] = [/* … */, statCard];
+```

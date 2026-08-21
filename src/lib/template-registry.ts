@@ -4,9 +4,11 @@
  * Un repo = un client (voir README) : pas de filtrage par site ici, tous
  * les templates de ce catalogue sont ceux du client propriétaire du repo.
  *
- * Pour ajouter un template : créer son dossier dans `src/templates/<nom>/`
- * (dupliquer `quote/` est le plus rapide), l'importer ci-dessous et
- * l'ajouter à `TEMPLATES`.
+ * Pour ajouter un template : voir le skill Claude "nouveau-template"
+ * (.claude/skills/nouveau-template/SKILL.md), autosuffisant — pas besoin
+ * qu'un template existant serve d'exemple. Sinon, à la main : créer son
+ * dossier dans `src/templates/<nom>/`, l'importer ci-dessous et l'ajouter
+ * à `TEMPLATES`.
  */
 
 import { CardTemplate } from "./template-engine";
