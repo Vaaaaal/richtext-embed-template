@@ -19,6 +19,14 @@ formulaire (aperçu en direct) → **Copier le code** → coller dans un Embed.
 Il n'y a pas d'insertion automatique dans l'élément sélectionné (choix assumé
 pour le MVP).
 
+Pour **modifier une card déjà collée** : recopier son code depuis l'éditeur
+CMS/Embed, **Importer une card existante** dans le panneau → coller →
+Charger. Le panneau retrouve le bon template et préremplit le formulaire
+avec les valeurs d'origine — pas besoin de tout retaper. Techniquement, le
+code copié embarque un commentaire HTML invisible (les valeurs du
+formulaire, encodées) qui rend ça possible ; voir
+[`src/lib/card-import.ts`](src/lib/card-import.ts).
+
 ## Développement
 
 ```bash

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Copy } from "lucide-react";
+import { Check, ChevronDown, Copy, Upload } from "lucide-react";
 
 import {
   CardTemplate,
@@ -8,6 +8,7 @@ import {
 } from "./lib/template-engine";
 import { TEMPLATES } from "./lib/template-registry";
 import { copyToClipboard } from "./lib/clipboard";
+import { decodeImportMarker, encodeImportMarker } from "./lib/card-import";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -31,6 +32,26 @@ function defaultsFor(tpl: CardTemplate): FieldValues {
   return defaults;
 }
 
+/**
+ * Ne garde, parmi des valeurs importées, que celles correspondant à un champ
+ * réellement déclaré sur `tpl`. Sert à la fois à ignorer les champs
+ * supprimés/renommés depuis la génération de la card importée (pas
+ * d'erreur, juste retombe sur leur défaut), et à ne jamais copier une clé
+ * arbitraire venue d'un JSON externe vers l'état — notamment "__proto__",
+ * qu'un simple spread de l'objet entier propagerait.
+ */
+function pickKnownFields(
+  tpl: CardTemplate,
+  raw: Record<string, string>
+): FieldValues {
+  const picked: FieldValues = {};
+  for (const field of tpl.fields) {
+    const value = raw[field.id];
+    if (typeof value === "string") picked[field.id] = value;
+  }
+  return picked;
+}
+
 function newScopeId(): string {
   return Math.random().toString(36).slice(2, 8);
 }
@@ -47,6 +68,9 @@ export default function App() {
   );
   const [showCode, setShowCode] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
 
   const frameRef = useRef<HTMLIFrameElement>(null);
   const copyTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -88,7 +112,11 @@ export default function App() {
     // aucun placeholder à substituer, c'est un texte figé (voir
     // lib/template-engine.ts).
     const script = current.js ? `\n<script>\n${current.js}\n</script>` : "";
-    return `<style>\n${built.css}\n</style>\n${built.html}${script}`;
+    // Marqueur d'import : permet de recoller ce code plus tard dans le
+    // panneau pour le modifier (voir lib/card-import.ts). Toujours ajouté
+    // après le rendu, jamais dans les gabarits eux-mêmes.
+    const marker = encodeImportMarker(current.id, vals);
+    return `<style>\n${built.css}\n</style>\n${built.html}${script}\n${marker}`;
   }, [current, values, scopes]);
 
   function handleFrameLoad(): void {
@@ -114,9 +142,89 @@ export default function App() {
     copyTimeout.current = setTimeout(() => setCopyState("idle"), 1800);
   }
 
+  function handleImport(): void {
+    const marker = decodeImportMarker(importText);
+    if (!marker) {
+      setImportError("Aucune card reconnue dans ce code.");
+      return;
+    }
+
+    const tpl = TEMPLATES.find((t) => t.id === marker.templateId);
+    if (!tpl) {
+      setImportError(`Template "${marker.templateId}" introuvable ici.`);
+      return;
+    }
+
+    const merged = { ...defaultsFor(tpl), ...pickKnownFields(tpl, marker.values) };
+    setCurrentId(tpl.id);
+    setValues((v) => ({ ...v, [tpl.id]: merged }));
+    // Nouveau suffixe : l'import démarre une nouvelle instance éditable,
+    // pas une reprise en main de la card déjà collée ailleurs.
+    setScopes((s) => ({ ...s, [tpl.id]: newScopeId() }));
+
+    setImportOpen(false);
+    setImportText("");
+    setImportError(null);
+  }
+
   return (
     <div className="flex h-screen min-h-0">
       <aside className="w-68 shrink-0 overflow-y-auto border-r border-border bg-card p-5">
+        <div className="mb-4 space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              setImportOpen((v) => !v);
+              setImportError(null);
+            }}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            <Upload className="size-3" />
+            Importer une card existante
+          </button>
+
+          {importOpen && (
+            <div className="space-y-2 rounded-lg border border-border bg-input/20 p-2.5">
+              <Textarea
+                autoFocus
+                value={importText}
+                onChange={(e) => {
+                  setImportText(e.target.value);
+                  setImportError(null);
+                }}
+                placeholder="Colle ici un code précédemment copié…"
+                className="h-20 bg-transparent font-mono text-[11px]"
+              />
+              {importError && (
+                <p className="text-[11px] text-destructive">{importError}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleImport}
+                  disabled={!importText.trim()}
+                >
+                  Charger
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setImportOpen(false);
+                    setImportText("");
+                    setImportError(null);
+                  }}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {TEMPLATES.length > 1 && (
           <div className="mb-4.5 space-y-1.5 border-b border-border pb-4">
             <Label
