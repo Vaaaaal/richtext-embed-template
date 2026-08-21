@@ -1,12 +1,12 @@
 ---
 name: nouveau-template
-description: Crée un nouveau template de card pour le générateur (dossier src/templates/<id>/ avec card.html, card.css, index.ts) en suivant les conventions du projet — placeholders, échappement, thème, JS optionnel — et l'enregistre dans le catalogue. À utiliser quand l'utilisateur veut ajouter un template (citation, CTA, stat, témoignage, simulateur…).
+description: Crée un nouveau template de bloc pour le générateur (dossier src/templates/<id>/ avec block.html, block.css, index.ts) en suivant les conventions du projet — placeholders, échappement, thème, JS optionnel — et l'enregistre dans le catalogue. À utiliser quand l'utilisateur veut ajouter un template (citation, CTA, stat, témoignage, grille de personnes, simulateur…).
 ---
 
-# Créer un nouveau template de card
+# Créer un nouveau template de bloc
 
-Ce skill s'applique au générateur de cards Webflow de ce repo. Il produit un
-dossier `src/templates/<id>/` (`card.html`, `card.css`, `index.ts`) et
+Ce skill s'applique au générateur de blocs Webflow de ce repo. Il produit un
+dossier `src/templates/<id>/` (`block.html`, `block.css`, `index.ts`) et
 l'enregistre dans `src/lib/template-registry.ts`. Le moteur qui interprète
 tout ça est `src/lib/template-engine.ts` — générique, il ne change jamais
 pour un nouveau template.
@@ -17,6 +17,13 @@ départ. Aucune étape ne suppose qu'un template particulier (`quote`, `cta`
 ou autre) existe déjà dans ce repo — un repo par client ne garde jamais que
 les templates propres à ce client, `quote`/`cta` peuvent très bien avoir
 été supprimés ou n'avoir jamais existé ici.
+
+> Note de vocabulaire : le type TypeScript s'appelle `CardTemplate` dans le
+> moteur (`src/lib/template-engine.ts`) et ne change pas — c'est un nom de
+> code interne, jamais vu par un client. Le mot utilisé partout ailleurs
+> (fichiers, texte du panneau, documentation) est "bloc", plus neutre : un
+> bloc n'est pas forcément visuellement une carte (citation, CTA, mais
+> aussi une grille de personnes, un bandeau, un badge…).
 
 ## Étape 1 — Cerner le besoin
 
@@ -48,12 +55,12 @@ src/templates/`) :
   de l'exemple minimal fourni en annexe, en bas de ce document. Il est
   complet et testé, aucune dépendance à un fichier particulier du repo.
 
-## Étape 3 — `card.html`
+## Étape 3 — `block.html`
 
 Fichier HTML normal (coloration, Emmet, Prettier fonctionnent). Règles :
 
 - **Toute classe commence par `{{cls}}`**, sans exception — c'est ce qui
-  isole le CSS généré de celui du site et permet à deux cards du même
+  isole le CSS généré de celui du site et permet à deux blocs du même
   template de cohabiter sur une page. `{{cls}}__partie` ou
   `{{cls}}_partie` sont deux conventions vues dans le repo, choisir l'une
   et rester cohérent dans le fichier.
@@ -61,16 +68,16 @@ Fichier HTML normal (coloration, Emmet, Prettier fonctionnent). Règles :
   automatiquement selon son type** par le moteur (voir tableau Étape 4).
   Ne jamais ajouter d'échappement manuel, ne jamais interpoler autre chose
   qu'un champ déclaré.
-- `{{#if champId}}…{{/if}}` : le bloc n'est rendu que si le champ résout à
-  une valeur non vide. Pour un élément optionnel (photo, lien, bouton),
-  combiner avec `urlFallback: ""` sur le champ correspondant (Étape 4) pour
-  qu'un champ vide masque l'élément plutôt que de produire un lien/image
-  cassé.
+- `{{#if champId}}…{{/if}}` : la portion n'est rendue que si le champ
+  résout à une valeur non vide. Pour un élément optionnel (photo, lien,
+  bouton), combiner avec `urlFallback: ""` sur le champ correspondant
+  (Étape 4) pour qu'un champ vide masque l'élément plutôt que de produire
+  un lien/image cassé.
 - Les commentaires HTML sont libres et bienvenus pour documenter — ils sont
   retirés automatiquement du code copié par le client, aucun risque qu'ils
   fuient.
 
-## Étape 4 — `card.css`
+## Étape 4 — `block.css`
 
 Même placeholders que le HTML. Un point cosmétique à connaître : à cause
 des `{{cls}}` dans les sélecteurs, ce n'est pas du CSS syntaxiquement
@@ -139,6 +146,10 @@ bloc de thème redéfinit :
 }
 ```
 
+(Les noms de custom properties `--card-*` sont une convention historique du
+projet, reprise telle quelle dans `quote`/`cta` — libre d'en choisir
+d'autres pour un nouveau template, rien ne les impose.)
+
 Pourquoi ce détour par des custom properties plutôt que des couleurs
 directement dans les `tokens` (essayé, abandonné) : ça permet au thème de
 piloter des propriétés composées (`color-mix()`, des états `:hover`) sans
@@ -151,36 +162,36 @@ Pour un simulateur ou une interaction (compteur, calcul…), pas pour du
 contenu statique. Dans `index.ts` :
 
 ```ts
-import js from "./card.js?raw";
+import js from "./block.js?raw";
 ...
 js: withInitGuard("dd-hook-<id>", js),
 ```
 
-Et dans `card.html`, une classe fixe posée en plus de `{{cls}}` sur la
+Et dans `block.html`, une classe fixe posée en plus de `{{cls}}` sur la
 racine : `class="{{cls}} dd-hook-<id>"`.
 
 **Règle non négociable, jamais d'exception** : **aucun `{{champId}}` dans
-`card.js`**. Le moteur ne fait passer `card.js` par aucune substitution — un
-`{{champId}}` littéral y resterait tel quel, jamais remplacé. C'est
+`block.js`**. Le moteur ne fait passer `block.js` par aucune substitution —
+un `{{champId}}` littéral y resterait tel quel, jamais remplacé. C'est
 volontaire : le client n'a jamais d'option pour écrire du JS, mais si un
 script recopiait une valeur qu'il a tapée directement dans du code exécuté,
 la faille reviendrait par la bande. Si le script a besoin d'une valeur
 saisie, il la relit dans le HTML déjà rendu (déjà échappé) :
 `component.querySelector(".ma-classe").textContent`.
 
-`hookClass` doit être une classe **fixe**, jamais `{{cls}}` : chaque card
-copiée duplique tout son `<script>`, donc deux cards du même template sur
+`hookClass` doit être une classe **fixe**, jamais `{{cls}}` : chaque bloc
+copié duplique tout son `<script>`, donc deux blocs du même template sur
 une page dupliquent le même script. `withInitGuard` protège contre cette
-collision (chaque exécution retrouve toutes les cards de ce type sur la
-page et ignore celles déjà initialisées) — à condition que `hookClass` soit
+collision (chaque exécution retrouve tous les blocs de ce type sur la
+page et ignore ceux déjà initialisés) — à condition que `hookClass` soit
 la même chaîne fixe partout, pas une valeur qui change à chaque copie.
 
 ## Étape 7 — `index.ts`
 
 ```ts
 import { CardTemplate } from "@/lib/template-engine";
-import html from "./card.html?raw";
-import css from "./card.css?raw";
+import html from "./block.html?raw";
+import css from "./block.css?raw";
 
 export const xxxCard: CardTemplate = {
   id: "xxx",
@@ -191,6 +202,10 @@ export const xxxCard: CardTemplate = {
   // js: withInitGuard("dd-hook-xxx", js), // seulement si Étape 6
 };
 ```
+
+Le nom de variable `xxxCard` suit la convention déjà en place dans le repo
+(`quoteCard`, `ctaCard`) — sans lien avec la forme visuelle du template,
+c'est juste un nom de variable.
 
 ## Étape 8 — Enregistrer le template
 
@@ -219,12 +234,12 @@ correspond à aucune règle CSS.
 
 ## Annexe — exemple minimal autosuffisant
 
-Une card "chiffre clé" : un chiffre, un libellé, un lien optionnel, un
+Un bloc "chiffre clé" : un chiffre, un libellé, un lien optionnel, un
 thème clair/sombre. Couvre `text`, `url` + `urlFallback` + `{{#if}}`, et le
 motif thème complet (Étape 5) — testé de bout en bout (build + rendu
 réel), à utiliser tel quel comme point de départ.
 
-`src/templates/stat/card.html` :
+`src/templates/stat/block.html` :
 
 ```html
 <div class="{{cls}} {{theme.class}}">
@@ -234,7 +249,7 @@ réel), à utiliser tel quel comme point de départ.
 </div>
 ```
 
-`src/templates/stat/card.css` :
+`src/templates/stat/block.css` :
 
 ```css
 .{{cls}} {
@@ -269,8 +284,8 @@ réel), à utiliser tel quel comme point de départ.
 
 ```ts
 import { CardTemplate } from "@/lib/template-engine";
-import html from "./card.html?raw";
-import css from "./card.css?raw";
+import html from "./block.html?raw";
+import css from "./block.css?raw";
 
 export const statCard: CardTemplate = {
   id: "stat",

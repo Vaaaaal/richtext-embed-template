@@ -1,6 +1,6 @@
 /**
- * Marqueur d'import : permet de recoller une card déjà générée dans le
- * panneau pour la modifier, plutôt que de retaper le formulaire ou de
+ * Marqueur d'import : permet de recoller un bloc déjà généré dans le
+ * panneau pour le modifier, plutôt que de retaper le formulaire ou de
  * bidouiller le HTML à la main dans l'éditeur CMS.
  *
  * Le marqueur encode les valeurs *brutes* du formulaire (pas le HTML/CSS
@@ -14,7 +14,7 @@
  * jamais casser le commentaire si un champ contient "-->".
  *
  * Ce marqueur est ajouté par App.tsx *après* renderTemplate() : il ne doit
- * jamais faire partie de card.html, où il serait retiré par stripComments()
+ * jamais faire partie de block.html, où il serait retiré par stripComments()
  * comme n'importe quel commentaire de gabarit.
  */
 

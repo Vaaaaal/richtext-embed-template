@@ -1,6 +1,6 @@
 import { CardTemplate } from "@/lib/template-engine";
-import html from "./card.html?raw";
-import css from "./card.css?raw";
+import html from "./block.html?raw";
+import css from "./block.css?raw";
 
 export const quoteCard: CardTemplate = {
   id: "quote",

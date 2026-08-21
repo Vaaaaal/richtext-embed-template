@@ -15,8 +15,8 @@ formulaire (aperçu en direct) → **Copier le code** → coller dans un Embed.
 Il n'y a pas d'insertion automatique dans l'élément sélectionné (choix assumé
 pour le MVP).
 
-Pour **modifier une card déjà collée** : recopier son code depuis l'éditeur
-CMS/Embed, **Importer une card existante** dans le panneau → coller →
+Pour **modifier un bloc déjà collé** : recopier son code depuis l'éditeur
+CMS/Embed, **Importer un bloc existant** dans le panneau → coller →
 Charger. Le panneau retrouve le bon template et préremplit le formulaire
 avec les valeurs d'origine — pas besoin de tout retaper. Techniquement, le
 code copié embarque un commentaire HTML invisible (les valeurs du
@@ -61,13 +61,14 @@ template, toute la mécanique est ailleurs :
 
 ```
 src/templates/quote/       ← template "Citation"   (à éditer / dupliquer)
-  ├── card.html            ←   markup, fichier HTML normal
-  ├── card.css             ←   styles, fichier CSS normal
+  ├── block.html           ←   markup, fichier HTML normal
+  ├── block.css            ←   styles, fichier CSS normal
   └── index.ts             ←   champs du formulaire + assemblage
 src/templates/cta/         ← template "CTA"        (même structure)
 
 src/lib/template-engine.ts   ← types + moteur de rendu (générique, ne change jamais)
-src/lib/template-registry.ts ← catalogue TEMPLATES + filtrage par site
+src/lib/template-registry.ts ← catalogue TEMPLATES
+src/lib/card-import.ts       ← marqueur d'import (recoller un bloc pour le modifier)
 src/lib/clipboard.ts         ← copie presse-papier avec fallbacks
 src/lib/utils.ts             ← helper `cn` (shadcn)
 
@@ -88,20 +89,20 @@ puis l'enregistrer dans le catalogue.
 
 ```
 src/templates/mon-template/
-├── card.html    ← markup (fichier HTML normal : coloration, Emmet, Prettier)
-├── card.css     ← styles (fichier CSS normal)
+├── block.html   ← markup (fichier HTML normal : coloration, Emmet, Prettier)
+├── block.css    ← styles (fichier CSS normal)
 └── index.ts     ← champs du formulaire + assemblage
 ```
 
 ```html
-<!-- card.html -->
+<!-- block.html -->
 <div class="{{cls}}">
   <h2 class="{{cls}}__titre">{{titre}}</h2>
 </div>
 ```
 
 ```css
-/* card.css */
+/* block.css */
 .{{cls}} {
   padding: 24px;
 }
@@ -113,8 +114,8 @@ src/templates/mon-template/
 ```ts
 // index.ts
 import { CardTemplate } from "@/lib/template-engine";
-import html from "./card.html?raw";
-import css from "./card.css?raw";
+import html from "./block.html?raw";
+import css from "./block.css?raw";
 
 export const monTemplate: CardTemplate = {
   id: "mon-template",
@@ -153,13 +154,13 @@ la liste dépasse 3 options.
 > du workspace. Les fichiers `.html`, eux, ne posent aucun problème
 > (`class="{{cls}}"` est un attribut parfaitement valide).
 
-**Syntaxe des gabarits `card.html` / `card.css`** (interprétée par
+**Syntaxe des gabarits `block.html` / `block.css`** (interprétée par
 `renderTemplate()` dans
 [`src/lib/template-engine.ts`](src/lib/template-engine.ts)) :
 
-- `{{cls}}` — classe racine unique de la card (suffixe aléatoire). Toujours
+- `{{cls}}` — classe racine unique du bloc (suffixe aléatoire). Toujours
   préfixer les classes par `{{cls}}` (ex. `{{cls}}__titre`) : c'est ce qui
-  isole le CSS généré des styles du site et permet à deux cards du même
+  isole le CSS généré des styles du site et permet à deux blocs du même
   template de cohabiter sur une page.
 - `{{champId}}` — valeur saisie pour ce champ, déjà échappée automatiquement
   (`escapeAttr` pour texte, `safeUrl` pour les champs `"url"`). Ne jamais
@@ -172,8 +173,8 @@ la liste dépasse 3 options.
   mettre `urlFallback: ""` sur ce champ pour qu'une valeur vide ou invalide
   masque le bloc plutôt que de pointer vers un lien cassé.
 
-Un nouveau suffixe de classe est tiré après chaque copie réussie, pour que la
-card suivante ait ses propres classes.
+Un nouveau suffixe de classe est tiré après chaque copie réussie, pour que le
+bloc suivant ait ses propres classes.
 
 ## Ajouter du JS à un template (simulateurs, interactivité)
 
@@ -182,7 +183,7 @@ auront jamais. Un `CardTemplate` peut avoir un champ `js` :
 
 ```ts
 import { CardTemplate, withInitGuard } from "@/lib/template-engine";
-import js from "./card.js?raw";
+import js from "./block.js?raw";
 ...
 export const monTemplate: CardTemplate = {
   ...
@@ -190,7 +191,7 @@ export const monTemplate: CardTemplate = {
 };
 ```
 
-**Règle non négociable : jamais de `{{champId}}` dans `card.js`.** Le
+**Règle non négociable : jamais de `{{champId}}` dans `block.js`.** Le
 formulaire n'expose jamais de champ "écris ton JS" au client — mais si un
 script recopie une valeur saisie par le client directement dans du code
 exécuté, la faille revient par la bande, même si c'est toi qui as écrit le
@@ -199,8 +200,8 @@ HTML déjà rendu (`component.querySelector(...)`), jamais via un
 placeholder. `js` n'est d'ailleurs jamais passé par `renderTemplate()` —
 aucun placeholder n'y est de toute façon interprété.
 
-**`withInitGuard(hookClass, setup)`** existe parce qu'une card copiée
-duplique tout son `<script>` — deux cards du même template sur une page,
+**`withInitGuard(hookClass, setup)`** existe parce qu'un bloc copié
+duplique tout son `<script>` — deux blocs du même template sur une page,
 c'est le même script présent deux fois. `hookClass` doit être une classe
 **fixe** par template (jamais `{{cls}}`, qui change à chaque copie), posée
 en plus de `{{cls}}` sur la racine du HTML :
@@ -209,11 +210,11 @@ en plus de `{{cls}}` sur la racine du HTML :
 <div class="{{cls}} dd-hook-mon-template">
 ```
 
-Chaque exécution du script retrouve alors toutes les cards de ce type sur
-la page et ignore celles déjà initialisées — sans ça, une deuxième card
+Chaque exécution du script retrouve alors tous les blocs de ce type sur
+la page et ignore ceux déjà initialisés — sans ça, un deuxième bloc
 identique sur la même page peut faire planter les deux. Vérifié avec deux
-cards du même template collées côte à côte, valeurs indépendantes,
-interaction sur l'une sans effet sur l'autre.
+blocs du même template collés côte à côte, valeurs indépendantes,
+interaction sur l'un sans effet sur l'autre.
 
 ## Multi-client : un repo par client
 
@@ -283,6 +284,6 @@ utilisent la même palette de couleurs.
 **Pour comparer** :
 
 ```bash
-git checkout main               && cd card-generator && npm run dev
-git checkout experiment/shadcn-ui && cd card-generator && npm run dev
+git checkout main && npm run dev
+git checkout experiment/shadcn-ui && npm run dev
 ```
