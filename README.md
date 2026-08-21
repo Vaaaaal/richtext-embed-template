@@ -1,13 +1,9 @@
-# Générateur de cards — Designer Extension Webflow
+# Générateur de blocs — Designer Extension Webflow
 
-> **Branche `experiment/shadcn-ui`** : test de portage du panneau vers
-> React + Tailwind + [shadcn/ui](https://ui.shadcn.com), pour comparer avec
-> la version vanilla TS de `main`. Voir [Notes sur l'expérimentation
-> shadcn](#notes-sur-lexpérimentation-shadcn) en bas de page.
-
-Panneau Webflow Designer qui génère des cards (citation, CTA) à partir de
-templates prédéfinis et fournit un code HTML/CSS autonome à coller dans un
-élément Embed ou un champ Rich Text du CMS.
+Panneau Webflow Designer qui génère des blocs de contenu (citation, CTA,
+et au-delà — tout ce qui n'est pas systématiquement une "carte") à partir
+de templates prédéfinis, et fournit un code HTML/CSS autonome à coller
+dans un élément Embed ou un champ Rich Text du CMS.
 
 **Capacité utilisée** : Designer Extension uniquement. Pas de Data Client, pas
 d'OAuth, pas de backend.

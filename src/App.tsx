@@ -145,7 +145,7 @@ export default function App() {
   function handleImport(): void {
     const marker = decodeImportMarker(importText);
     if (!marker) {
-      setImportError("Aucune card reconnue dans ce code.");
+      setImportError("Aucun bloc reconnu dans ce code.");
       return;
     }
 
@@ -180,7 +180,7 @@ export default function App() {
             className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
           >
             <Upload className="size-3" />
-            Importer une card existante
+            Importer un bloc existant
           </button>
 
           {importOpen && (
@@ -306,7 +306,7 @@ export default function App() {
         <iframe
           ref={frameRef}
           onLoad={handleFrameLoad}
-          title="Aperçu de la card"
+          title="Aperçu du bloc"
           className="block w-full rounded-xl border border-white/6 bg-white shadow-[0_1px_2px_rgba(0,0,0,.3),0_16px_32px_rgba(0,0,0,.3)]"
           style={{ height: 240 }}
           srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;}body{padding:16px;background:#fff;}</style></head><body>${code}</body></html>`}
