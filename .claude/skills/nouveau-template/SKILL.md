@@ -97,8 +97,8 @@ standard de ce mécanisme (le thème).
 
 ## Étape 5 — Thème (si demandé)
 
-Motif standard du projet, identique sur `quote` et `cta` — à reproduire
-tel quel plutôt qu'improviser une variante :
+Motif standard du projet — à reproduire tel quel plutôt qu'improviser une
+variante :
 
 ```ts
 {
